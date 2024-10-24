@@ -12,6 +12,7 @@ import { FaturamentoEstabelecimento } from "./pages/app/estabelecimento/faturame
 import { VerificarTicket } from "./pages/app/estabelecimento/verificar-ticket";
 import { LerQrCode } from "./pages/app/estabelecimento/ler-qrcode";
 import { VerificarManual } from "./pages/app/estabelecimento/verificar-manual";
+import { SignIn } from "./pages/auth/sign-in";
 
 // Definição do roteador
 export const router = createBrowserRouter([
@@ -34,7 +35,7 @@ export const router = createBrowserRouter([
     path: '/auth',
     element: <AuthLayout />,
     children: [
-      { path: '/auth/login', element: <div>Login Page</div> },
+      { path: '/auth/login', element: <SignIn/> },
     ],
   },
 ]);
