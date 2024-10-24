@@ -1,16 +1,38 @@
+import { useState } from 'react';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
 import useFacialRecognition from '../hooks/useFacialRecognition';
 
 interface FacialRecognitionProps {
   onClose: (isApproved: boolean) => void;
-  useBackCamera?: boolean; // Prop para escolher câmera traseira ou frontal
 }
 
-const FacialRecognition = ({ onClose, useBackCamera = false }: FacialRecognitionProps) => {
-  const { videoRef, isVerified } = useFacialRecognition(onClose, useBackCamera);
+const FacialRecognition = ({ onClose }: FacialRecognitionProps) => {
+  const [selectedCamera, setSelectedCamera] = useState<'frontal' | 'traseira'>('frontal');
+  const { videoRef, isVerified } = useFacialRecognition(onClose, selectedCamera === 'traseira');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-80 p-4">
+      {/* Seletor de câmera */}
+      <div className="flex mb-4">
+        <button
+          onClick={() => setSelectedCamera('frontal')}
+          className={`py-2 px-4 rounded-md ${
+            selectedCamera === 'frontal' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'
+          }`}
+        >
+          Usar Câmera Frontal
+        </button>
+        <button
+          onClick={() => setSelectedCamera('traseira')}
+          className={`py-2 px-4 ml-2 rounded-md ${
+            selectedCamera === 'traseira' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'
+          }`}
+        >
+          Usar Câmera Traseira
+        </button>
+      </div>
+
+      {/* Verificação de rosto */}
       {isVerified === 'loading' ? (
         <div className="flex flex-col items-center text-center">
           <Loader className="w-16 h-16 md:w-20 md:h-20 text-white animate-spin mb-4" />
