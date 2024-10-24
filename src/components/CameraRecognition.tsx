@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
 import useFacialRecognition from '../hooks/useFacialRecognition';
 
@@ -7,32 +6,10 @@ interface FacialRecognitionProps {
 }
 
 const FacialRecognition = ({ onClose }: FacialRecognitionProps) => {
-  const [useBackCamera, setUseBackCamera] = useState<boolean>(false);
-  const { videoRef, isVerified } = useFacialRecognition(onClose, useBackCamera);
+  const { videoRef, isVerified } = useFacialRecognition(onClose); // Chamada do hook ajustada
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-80 p-4">
-      {/* Botões para alternar entre as câmeras */}
-      <div className="flex mb-4">
-        <button
-          onClick={() => setUseBackCamera(false)}
-          className={`py-2 px-4 rounded-md ${
-            !useBackCamera ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'
-          }`}
-        >
-          Câmera Frontal
-        </button>
-        <button
-          onClick={() => setUseBackCamera(true)}
-          className={`py-2 px-4 ml-2 rounded-md ${
-            useBackCamera ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'
-          }`}
-        >
-          Câmera Traseira
-        </button>
-      </div>
-
-      {/* Verificação facial */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4">
       {isVerified === 'loading' ? (
         <div className="flex flex-col items-center text-center">
           <Loader className="w-16 h-16 md:w-20 md:h-20 text-white animate-spin mb-4" />

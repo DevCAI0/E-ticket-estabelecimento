@@ -2,16 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import * as faceapi from 'face-api.js';
 import { loadLabeledImages, compareFaces } from '@/lib/cam-utils';
 
-const useFacialRecognition = (
-  onClose: (isApproved: boolean) => void,
-  useBackCamera: boolean = false
-) => {
+const useFacialRecognition = (onClose: (isApproved: boolean) => void) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isVerified, setIsVerified] = useState<'approved' | 'denied' | 'loading' | null>('loading');
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
+    // Carregar os modelos de detecção facial
     const loadModels = async () => {
       const MODEL_URL = '/models';
       try {
@@ -27,13 +25,14 @@ const useFacialRecognition = (
       }
     };
 
+    // Iniciar a câmera traseira
     const startCamera = async () => {
       try {
         await loadModels();
 
-        // Configuração de vídeo para selecionar câmera
+        // Configuração de vídeo para a câmera traseira
         const videoConstraints: MediaStreamConstraints = {
-          video: { facingMode: useBackCamera ? 'environment' : 'user' },
+          video: { facingMode: 'environment' }, // Força o uso da câmera traseira
         };
 
         const stream = await navigator.mediaDevices.getUserMedia(videoConstraints);
@@ -49,6 +48,7 @@ const useFacialRecognition = (
       }
     };
 
+    // Rodar a detecção de face
     const runFaceDetection = async () => {
       const labeledDescriptors = await loadLabeledImages();
       if (labeledDescriptors.length === 0) {
@@ -61,7 +61,7 @@ const useFacialRecognition = (
         setIsVerified('denied');
         stopCamera();
         onClose(false);
-      }, 30000);
+      }, 30000); // 30 segundos de timeout
 
       const detectFace = async () => {
         if (!videoRef.current) return;
@@ -87,6 +87,7 @@ const useFacialRecognition = (
       detectFace();
     };
 
+    // Parar a câmera
     const stopCamera = () => {
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
@@ -101,7 +102,7 @@ const useFacialRecognition = (
       clearTimeout(timer);
       stopCamera();
     };
-  }, [onClose, useBackCamera]);
+  }, [onClose]);
 
   return { videoRef, isVerified };
 };
