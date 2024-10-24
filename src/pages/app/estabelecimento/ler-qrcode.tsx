@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 
 export const LerQrCode = () => {
-  const [decodedText, setDecodedText] = useState<string | null>(null);
   const [ticketInfo, setTicketInfo] = useState<any | null>(null);
 
   useEffect(() => {
-    // Verifica se existem dados salvos no Local Storage ao carregar o componente
     const storedData = localStorage.getItem('ticketInfo');
     if (storedData) {
       setTicketInfo(JSON.parse(storedData));
@@ -20,14 +18,13 @@ export const LerQrCode = () => {
       { fps: 10, qrbox: 250 },
       (text) => {
         try {
-          setDecodedText(text);
-          console.log(`Texto do QR Code: ${text}`); 
+          console.log(`Texto do QR Code: ${text}`);
 
           const info = JSON.parse(text);
-          console.log('Informações do ticket:', info); 
+          console.log('Informações do ticket:', info);
 
           setTicketInfo(info);
-          // Armazenar no Local Storage com chave 'approvedTickets'
+
           const approvedTickets = JSON.parse(localStorage.getItem('approvedTickets') || '[]');
           approvedTickets.push(info);
           localStorage.setItem('approvedTickets', JSON.stringify(approvedTickets));
@@ -35,7 +32,6 @@ export const LerQrCode = () => {
           qrCodeScanner.stop();
         } catch (error) {
           console.error('Erro ao processar QR Code:', error);
-          setDecodedText('Formato de QR Code inválido');
         }
       },
       (error) => {
