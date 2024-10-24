@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import * as faceapi from 'face-api.js';
 import { loadLabeledImages, compareFaces } from '@/lib/cam-utils';
 
-const useFacialRecognition = (onClose: (isApproved: boolean) => void, useBackCamera: boolean) => {
+const useFacialRecognition = (
+  onClose: (isApproved: boolean) => void,
+  useBackCamera: boolean = false
+) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isVerified, setIsVerified] = useState<'approved' | 'denied' | 'loading' | null>('loading');
 
@@ -17,6 +20,7 @@ const useFacialRecognition = (onClose: (isApproved: boolean) => void, useBackCam
           faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
           faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
         ]);
+        console.log('Modelos carregados com sucesso.');
       } catch (error) {
         console.error('Erro ao carregar os modelos:', error);
         onClose(false);
@@ -27,11 +31,12 @@ const useFacialRecognition = (onClose: (isApproved: boolean) => void, useBackCam
       try {
         await loadModels();
 
-        const videoConstraints = {
-          facingMode: useBackCamera ? 'environment' : 'user',
+        // Configuração de vídeo para selecionar câmera
+        const videoConstraints: MediaStreamConstraints = {
+          video: { facingMode: useBackCamera ? 'environment' : 'user' },
         };
 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
+        const stream = await navigator.mediaDevices.getUserMedia(videoConstraints);
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -44,7 +49,6 @@ const useFacialRecognition = (onClose: (isApproved: boolean) => void, useBackCam
       }
     };
 
-    // Inicia a detecção de faces
     const runFaceDetection = async () => {
       const labeledDescriptors = await loadLabeledImages();
       if (labeledDescriptors.length === 0) {
@@ -86,7 +90,7 @@ const useFacialRecognition = (onClose: (isApproved: boolean) => void, useBackCam
     const stopCamera = () => {
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
         videoRef.current.srcObject = null;
       }
     };

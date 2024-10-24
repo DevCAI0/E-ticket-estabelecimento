@@ -7,32 +7,32 @@ interface FacialRecognitionProps {
 }
 
 const FacialRecognition = ({ onClose }: FacialRecognitionProps) => {
-  const [selectedCamera, setSelectedCamera] = useState<'frontal' | 'traseira'>('frontal');
-  const { videoRef, isVerified } = useFacialRecognition(onClose, selectedCamera === 'traseira');
+  const [useBackCamera, setUseBackCamera] = useState<boolean>(false);
+  const { videoRef, isVerified } = useFacialRecognition(onClose, useBackCamera);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-80 p-4">
-      {/* Seletor de câmera */}
+      {/* Botões para alternar entre as câmeras */}
       <div className="flex mb-4">
         <button
-          onClick={() => setSelectedCamera('frontal')}
+          onClick={() => setUseBackCamera(false)}
           className={`py-2 px-4 rounded-md ${
-            selectedCamera === 'frontal' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'
+            !useBackCamera ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'
           }`}
         >
-          Usar Câmera Frontal
+          Câmera Frontal
         </button>
         <button
-          onClick={() => setSelectedCamera('traseira')}
+          onClick={() => setUseBackCamera(true)}
           className={`py-2 px-4 ml-2 rounded-md ${
-            selectedCamera === 'traseira' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'
+            useBackCamera ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'
           }`}
         >
-          Usar Câmera Traseira
+          Câmera Traseira
         </button>
       </div>
 
-      {/* Verificação de rosto */}
+      {/* Verificação facial */}
       {isVerified === 'loading' ? (
         <div className="flex flex-col items-center text-center">
           <Loader className="w-16 h-16 md:w-20 md:h-20 text-white animate-spin mb-4" />
