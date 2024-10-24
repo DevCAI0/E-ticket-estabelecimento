@@ -1,20 +1,50 @@
 import { Card } from './card';
-import { PlusCircle, CheckCircle, FileText, CreditCard, ClipboardCheck, } from 'lucide-react'; // Ícones de react-icons
+import { CheckCircle, FileText, CreditCard, ClipboardCheck, QrCode, } from 'lucide-react'; // Ícones de react-icons
 
 // Dados das categorias, links e cores
 const cardsData = [
   {
     category: 'Estabelecimento',
-    color: '#F43F5E', // Rosa
     links: [
-      { title: 'Verificar Ticket', url: '/estabelecimento/verificar-ticket', icon: <PlusCircle className="w-6 h-6" /> },
-      { title: 'Aprovar Ticket', url: '/estabelecimento/aprovar-ticket', icon: <CheckCircle className="w-6 h-6" /> },
-      { title: 'Tickets Aprovados', url: '/estabelecimento/tickets-aprovados', icon: <CheckCircle className="w-6 h-6" /> },
-      { title: 'Relatórios', url: '/estabelecimento/relatorios', icon: <FileText className="w-6 h-6" /> },
-      { title: 'Faturamento', url: '/estabelecimento/faturamento', icon: <CreditCard className="w-6 h-6" /> },
-      { title: 'Enviar Notas', url: '/estabelecimento/enviar-notas', icon: <ClipboardCheck className="w-6 h-6" /> },
+      {
+        title: 'Ler Ticket',
+        url: '/estabelecimento/verificar-ticket/qrcode',
+        icon: <QrCode className="w-6 h-6" />,
+        color: '#1E3A8A', // Azul Escuro
+      },
+      {
+        title: 'Verificar Manualmente',
+        url: '/estabelecimento/verificar-ticket/manual',
+        icon: <CheckCircle className="w-6 h-6" />,
+        color: '#ffffff', // Branco Azulado
+      },
+      {
+        title: 'Aprovar Ticket',
+        url: '/estabelecimento/aprovar-ticket',
+        icon: <CheckCircle className="w-6 h-6" />,
+        color: '#F43F5E', // Vermelho
+      },
+      {
+        title: 'Relatórios',
+        url: '/estabelecimento/relatorios',
+        icon: <FileText className="w-6 h-6" />,
+        color: '#F43F5E', // Vermelho
+      },
+      {
+        title: 'Faturamento',
+        url: '/estabelecimento/faturamento',
+        icon: <CreditCard className="w-6 h-6" />,
+        color: '#F43F5E', // Vermelho
+      },
+      {
+        title: 'Enviar Notas',
+        url: '/estabelecimento/enviar-notas',
+        icon: <ClipboardCheck className="w-6 h-6" />,
+        color: '#F43F5E', // Vermelho
+      },
     ],
-  },
+  }
+  
 ];
 
 const CardList = () => {
@@ -30,7 +60,7 @@ const CardList = () => {
                   title={link.title}
                   url={link.url}
                   icon={link.icon}
-                  color={categoryData.color}
+                  color={link.color}
                 />
               ))}
             </div>

@@ -19,7 +19,7 @@ export const Card = ({ title, icon, color, url }: CardProps) => {
         style={{ backgroundColor: color }}
       >
         <div className="mb-2">{icon}</div>
-        <h3 className="text-white font-bold text-sm text-center">{title}</h3>
+        <h3 className="text-black font-bold text-lg text-center">{title}</h3>
       </div>
     </NavLink>
   );
