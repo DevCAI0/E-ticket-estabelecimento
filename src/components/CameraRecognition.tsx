@@ -8,8 +8,7 @@ interface FacialRecognitionProps {
 
 const FacialRecognition = ({ onClose, useBackCamera = false }: FacialRecognitionProps) => {
   // Ajusta a configuração de câmera com base na prop `useBackCamera`
-  const facingMode = useBackCamera ? 'environment' : 'user';
-  const { videoRef, isVerified } = useFacialRecognition(onClose, facingMode);
+  const { videoRef, isVerified } = useFacialRecognition(onClose, useBackCamera);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4">

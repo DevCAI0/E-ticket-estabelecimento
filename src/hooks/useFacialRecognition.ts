@@ -2,16 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import * as faceapi from 'face-api.js';
 import { loadLabeledImages, compareFaces } from '@/lib/cam-utils';
 
-const useFacialRecognition = (
-  onClose: (isApproved: boolean) => void,
-  facingMode: 'user' | 'environment' = 'user' // Define o modo de câmera
-) => {
+const useFacialRecognition = (onClose: (isApproved: boolean) => void, isApproval: boolean) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isVerified, setIsVerified] = useState<'approved' | 'denied' | 'loading' | null>('loading');
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
+    // Carregar os modelos de detecção facial
     const loadModels = async () => {
       const MODEL_URL = '/models';
       try {
@@ -28,23 +26,33 @@ const useFacialRecognition = (
       }
     };
 
+    // Iniciar a câmera
     const startCamera = async () => {
       try {
         await loadModels();
+
+        // Configuração de câmera para dispositivos móveis e desktops
+        const videoConstraints = {
+          facingMode: isApproval ? 'environment' : 'user', // Use 'environment' para traseira e 'user' para frontal
+        };
+
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode }, // Usa o modo de câmera especificado
+          video: videoConstraints,
         });
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
-        await runFaceDetection();
+
+        await runFaceDetection(); // Iniciar detecção de face
       } catch (error) {
         console.error('Erro ao acessar a câmera:', error);
-        alert('Não foi possível acessar a câmera.');
+        alert('Não foi possível acessar a câmera. Verifique as permissões.');
         onClose(false);
       }
     };
 
+    // Rodar a detecção de face
     const runFaceDetection = async () => {
       const labeledDescriptors = await loadLabeledImages();
       if (labeledDescriptors.length === 0) {
@@ -57,7 +65,7 @@ const useFacialRecognition = (
         setIsVerified('denied');
         stopCamera();
         onClose(false);
-      }, 30000);
+      }, 30000); // 30 segundos de timeout
 
       const detectFace = async () => {
         if (!videoRef.current) return;
@@ -83,21 +91,23 @@ const useFacialRecognition = (
       detectFace();
     };
 
+    // Parar a câmera
     const stopCamera = () => {
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach((track) => track.stop());
+        stream.getTracks().forEach(track => track.stop());
         videoRef.current.srcObject = null;
       }
     };
 
     startCamera();
 
+    // Cleanup ao desmontar
     return () => {
       clearTimeout(timer);
       stopCamera();
     };
-  }, [onClose, facingMode]);
+  }, [onClose, isApproval]);
 
   return { videoRef, isVerified };
 };
