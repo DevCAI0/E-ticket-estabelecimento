@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as faceapi from 'face-api.js';
 import { loadLabeledImages, compareFaces } from '@/lib/cam-utils';
 
-const useFacialRecognition = (onClose: (isApproved: boolean) => void, isApproval: boolean) => {
+const useFacialRecognition = (onClose: (isApproved: boolean) => void, useBackCamera: boolean) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isVerified, setIsVerified] = useState<'approved' | 'denied' | 'loading' | null>('loading');
 
@@ -31,9 +31,9 @@ const useFacialRecognition = (onClose: (isApproved: boolean) => void, isApproval
       try {
         await loadModels();
 
-        // Configuração de câmera para dispositivos móveis e desktops
+        // Configuração de câmera com base na prop `useBackCamera`
         const videoConstraints = {
-          facingMode: isApproval ? 'environment' : 'user', // Use 'environment' para traseira e 'user' para frontal
+          facingMode: useBackCamera ? 'environment' : 'user',
         };
 
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -65,7 +65,7 @@ const useFacialRecognition = (onClose: (isApproved: boolean) => void, isApproval
         setIsVerified('denied');
         stopCamera();
         onClose(false);
-      }, 30000); // 30 segundos de timeout
+      }, 30000); // Timeout de 30 segundos
 
       const detectFace = async () => {
         if (!videoRef.current) return;
@@ -107,7 +107,7 @@ const useFacialRecognition = (onClose: (isApproved: boolean) => void, isApproval
       clearTimeout(timer);
       stopCamera();
     };
-  }, [onClose, isApproval]);
+  }, [onClose, useBackCamera]);
 
   return { videoRef, isVerified };
 };

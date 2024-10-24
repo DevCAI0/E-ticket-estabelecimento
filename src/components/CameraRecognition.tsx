@@ -2,12 +2,11 @@ import { CheckCircle, XCircle, Loader } from 'lucide-react';
 import useFacialRecognition from '../hooks/useFacialRecognition';
 
 interface FacialRecognitionProps {
-  onClose: () => void;
+  onClose: (isApproved: boolean) => void;
   useBackCamera?: boolean; // Prop para escolher câmera traseira ou frontal
 }
 
 const FacialRecognition = ({ onClose, useBackCamera = false }: FacialRecognitionProps) => {
-  // Ajusta a configuração de câmera com base na prop `useBackCamera`
   const { videoRef, isVerified } = useFacialRecognition(onClose, useBackCamera);
 
   return (
