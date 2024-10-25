@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -52,7 +52,7 @@ export const TicketsAprovados = () => {
             value="negados" 
             className="flex-1 py-2 text-center hover:bg-red-200 border border-gray-300 rounded-t-lg"
           >
-            Negados
+            Invalidos
           </TabsTrigger>
         </TabsList>
 
