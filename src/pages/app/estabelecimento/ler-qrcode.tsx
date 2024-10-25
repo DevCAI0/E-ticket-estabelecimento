@@ -21,27 +21,28 @@ export const LerQrCode = () => {
         try {
           console.log(`Texto do QR Code: ${decodedText}`);
           
-          // Converte o texto do QR Code para JSON, se necessário
+          // Converte o texto do QR Code para JSON
           const info = JSON.parse(decodedText);
           console.log('Informações do ticket:', info);
 
-          // Verifica se as informações são válidas e aprovadas
-          if (info.numeroTicket) {
-            setTicketInfo(info);
+          setTicketInfo(info);
 
-            // Salva o ticket no Local Storage
-            const approvedTickets = JSON.parse(localStorage.getItem('approvedTickets') || '[]');
-            approvedTickets.push(info);
-            localStorage.setItem('approvedTickets', JSON.stringify(approvedTickets));
-          }
+          // Salva o ticket no Local Storage
+          const approvedTickets = JSON.parse(localStorage.getItem('approvedTickets') || '[]');
+          approvedTickets.push(info);
+          localStorage.setItem('approvedTickets', JSON.stringify(approvedTickets));
 
           qrCodeScanner.stop(); // Para o scanner após leitura bem-sucedida
         } catch (error) {
-          console.error('Erro ao processar QR Code:', error);
+          // Converte o error para string antes de exibir no alerta
+          const errorMessage = (error instanceof Error) ? error.message : String(error);
+          console.error('Erro ao processar QR Code:', errorMessage);
+          alert(`Erro ao processar QR Code: ${errorMessage}`);
         }
       },
       (errorMessage: string) => {
         console.warn(`Erro de leitura: ${errorMessage}`);
+        alert(`Erro de leitura: ${errorMessage}`);
       }
     );
   };
