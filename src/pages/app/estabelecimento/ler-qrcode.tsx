@@ -16,21 +16,24 @@ export const LerQrCode = () => {
     const qrCodeScanner = new Html5Qrcode('reader');
     qrCodeScanner.start(
       { facingMode: 'environment' }, // Câmera traseira
-      { fps: 60, qrbox: 250 },
+      { fps: 10, qrbox: 250 },
       (decodedText: string) => {
         try {
           console.log(`Texto do QR Code: ${decodedText}`);
           
-          // Converte o texto do QR Code para JSON
+          // Converte o texto do QR Code para JSON, se necessário
           const info = JSON.parse(decodedText);
           console.log('Informações do ticket:', info);
 
-          setTicketInfo(info);
+          // Verifica se as informações são válidas e aprovadas
+          if (info.numeroTicket) {
+            setTicketInfo(info);
 
-          // Salva o ticket no Local Storage
-          const approvedTickets = JSON.parse(localStorage.getItem('approvedTickets') || '[]');
-          approvedTickets.push(info);
-          localStorage.setItem('approvedTickets', JSON.stringify(approvedTickets));
+            // Salva o ticket no Local Storage
+            const approvedTickets = JSON.parse(localStorage.getItem('approvedTickets') || '[]');
+            approvedTickets.push(info);
+            localStorage.setItem('approvedTickets', JSON.stringify(approvedTickets));
+          }
 
           qrCodeScanner.stop(); // Para o scanner após leitura bem-sucedida
         } catch (error) {
