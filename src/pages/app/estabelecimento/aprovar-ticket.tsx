@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { TicketAprovado } from '@/api/ticket-aprovado';
 import FacialRecognition from '../../../components/CameraRecognition';
 
-// Componente de Aprovar Ticket
 export const AprovarTicket = () => {
   const [tickets, setTickets] = useState<TicketAprovado[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<TicketAprovado | null>(null);
@@ -26,11 +25,21 @@ export const AprovarTicket = () => {
   const handleVerificationClose = (isApproved: boolean) => {
     setIsVerifying(false);
     if (isApproved) {
-      // Lógica para aprovação do ticket
       alert(`Ticket ${selectedTicket?.numeroTicket} aprovado!`);
     } else {
       alert('Verificação negada.');
     }
+  };
+
+  // Função para deletar o ticket
+  const handleDeleteTicket = (ticketToDelete: TicketAprovado) => {
+    const updatedTickets = tickets.filter(
+      (ticket) => ticket.numeroTicket !== ticketToDelete.numeroTicket
+    );
+
+    setTickets(updatedTickets);
+    localStorage.setItem('approvedTickets', JSON.stringify(updatedTickets));
+    alert(`Ticket ${ticketToDelete.numeroTicket} deletado!`);
   };
 
   return (
@@ -48,12 +57,20 @@ export const AprovarTicket = () => {
                 <h3 className="text-lg font-semibold mb-2">{ticket.motorista}</h3>
                 <p className="text-sm text-gray-600 mb-2">Número do Ticket: {ticket.numeroTicket}</p>
               </div>
-              <button
-                onClick={() => handleApproveTicket(ticket)}
-                className="mt-4 py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
-              >
-                Aprovar
-              </button>
+              <div className="flex mt-4">
+                <button
+                  onClick={() => handleApproveTicket(ticket)}
+                  className="flex-1 py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 transition mr-2"
+                >
+                  Aprovar
+                </button>
+                <button
+                  onClick={() => handleDeleteTicket(ticket)}
+                  className="flex-1 py-2 px-4 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+                >
+                  Deletar
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -63,7 +80,7 @@ export const AprovarTicket = () => {
 
       {/* Componente de verificação facial */}
       {isVerifying && (
-        <FacialRecognition onClose={() => handleVerificationClose(true)} />
+        <FacialRecognition onClose={handleVerificationClose} />
       )}
     </div>
   );

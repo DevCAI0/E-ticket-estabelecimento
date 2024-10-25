@@ -10,7 +10,7 @@ export function Header() {
             <Home className="h-4 w-4" />
             Início
           </NavLink>
-          <NavLink to="/orders">
+          <NavLink to="/estabelecimento/tickets-aprovados">
             <TicketPlus className="h-4 w-4" />
             Tickets
           </NavLink>
