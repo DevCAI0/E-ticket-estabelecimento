@@ -1,4 +1,4 @@
-import { Card } from './card';
+import { CardComponent } from './cardComponent';
 import { CheckCircle, FileText, CreditCard, ClipboardCheck, QrCode, } from 'lucide-react'; // Ícones de react-icons
 
 // Dados das categorias, links e cores
@@ -16,7 +16,7 @@ const cardsData = [
         title: 'Verificar Manualmente',
         url: '/estabelecimento/verificar-ticket/manual',
         icon: <CheckCircle className="w-6 h-6" />,
-        color: '#ffffff', // Branco Azulado
+        color: '#fca5a5', // Branco Azulado
       },
       {
         title: 'Aprovar Ticket',
@@ -55,7 +55,7 @@ const CardList = () => {
             <h2 className="text-2xl font-bold mb-4">{categoryData.category}</h2>
             <div className="grid grid-cols-2 gap-4">
               {categoryData.links.map((link, index) => (
-                <Card
+                <CardComponent
                   key={index}
                   title={link.title}
                   url={link.url}

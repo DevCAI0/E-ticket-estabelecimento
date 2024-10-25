@@ -5,6 +5,7 @@ export const LerQrCode = () => {
   const [ticketInfo, setTicketInfo] = useState<any | null>(null);
 
   useEffect(() => {
+    // Verifica se existem dados salvos no Local Storage ao carregar o componente
     const storedData = localStorage.getItem('ticketInfo');
     if (storedData) {
       setTicketInfo(JSON.parse(storedData));
@@ -14,28 +15,30 @@ export const LerQrCode = () => {
   const startScanning = () => {
     const qrCodeScanner = new Html5Qrcode('reader');
     qrCodeScanner.start(
-      { facingMode: 'environment' },
-      { fps: 10, qrbox: 250 },
-      (text) => {
+      { facingMode: 'environment' }, // Câmera traseira
+      { fps: 60, qrbox: 250 },
+      (decodedText: string) => {
         try {
-          console.log(`Texto do QR Code: ${text}`);
-
-          const info = JSON.parse(text);
+          console.log(`Texto do QR Code: ${decodedText}`);
+          
+          // Converte o texto do QR Code para JSON
+          const info = JSON.parse(decodedText);
           console.log('Informações do ticket:', info);
 
           setTicketInfo(info);
 
+          // Salva o ticket no Local Storage
           const approvedTickets = JSON.parse(localStorage.getItem('approvedTickets') || '[]');
           approvedTickets.push(info);
           localStorage.setItem('approvedTickets', JSON.stringify(approvedTickets));
 
-          qrCodeScanner.stop();
+          qrCodeScanner.stop(); // Para o scanner após leitura bem-sucedida
         } catch (error) {
           console.error('Erro ao processar QR Code:', error);
         }
       },
-      (error) => {
-        console.warn(`Erro de leitura: ${error}`);
+      (errorMessage: string) => {
+        console.warn(`Erro de leitura: ${errorMessage}`);
       }
     );
   };
@@ -56,12 +59,18 @@ export const LerQrCode = () => {
       <div id="reader" className="w-full max-w-md mx-auto mt-4"></div>
 
       {ticketInfo ? (
-        <div className="bg-green-100 p-4 rounded-lg shadow-md mt-4">
-          <h2 className="text-lg font-semibold text-green-700 mb-2">Informações do Ticket</h2>
-          <p className="text-sm text-gray-800">Número do Ticket: {ticketInfo.numeroTicket}</p>
-          <p className="text-sm text-gray-800">Motorista: {ticketInfo.motorista}</p>
-          <p className="text-sm text-gray-800">Tipo de Refeição: {ticketInfo.tipoRefeicao}</p>
-          <p className="text-sm text-gray-800">Data: {ticketInfo.data}</p>
+        <div className="bg-green-100 p-6 rounded-lg shadow-md mt-4">
+          <h2 className="text-xl font-semibold text-green-700 mb-2">Informações do Ticket</h2>
+          <p className="text-lg text-gray-800">Número do Ticket: {ticketInfo.numeroTicket}</p>
+          <p className="text-lg text-gray-800">Motorista: {ticketInfo.motorista}</p>
+          <p className="text-lg text-gray-800">Tipo de Refeição: {ticketInfo.tipoRefeicao}</p>
+          <p className="text-lg text-gray-800">Data: {ticketInfo.data}</p>
+          <button
+            onClick={() => console.log('Consumir Ticket')} // Lógica para consumir o ticket
+            className="mt-4 py-2 px-4 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+          >
+            Consumir Ticket
+          </button>
         </div>
       ) : (
         <p className="text-center text-gray-600 mt-4">Posicione o QR Code na frente da câmera.</p>
