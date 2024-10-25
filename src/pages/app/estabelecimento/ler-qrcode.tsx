@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
+import AprovarTicket from './aprovar-ticket'; // Importando o componente
 
 export const LerQrCode = () => {
   const [ticketInfo, setTicketInfo] = useState<any | null>(null);
+  const [isTicketApproved, setIsTicketApproved] = useState<boolean>(false); // Novo estado para controlar a aprovação
 
   useEffect(() => {
     const storedData = localStorage.getItem('ticketInfo');
@@ -24,6 +26,13 @@ export const LerQrCode = () => {
           console.log('Informações do ticket:', info);
 
           setTicketInfo(info);
+
+          // Lógica para verificar se o ticket é aprovado
+          if (info.numeroTicket && info.motorista) { // Ajustar a lógica de aprovação conforme necessário
+            setIsTicketApproved(true);
+          } else {
+            setIsTicketApproved(false);
+          }
 
           const approvedTickets = JSON.parse(localStorage.getItem('approvedTickets') || '[]');
           approvedTickets.push(info);
@@ -62,6 +71,9 @@ export const LerQrCode = () => {
           <p className="text-sm text-gray-800">Motorista: {ticketInfo.motorista}</p>
           <p className="text-sm text-gray-800">Tipo de Refeição: {ticketInfo.tipoRefeicao}</p>
           <p className="text-sm text-gray-800">Data: {ticketInfo.data}</p>
+
+          {/* Exibir o componente AprovarTicket apenas se o ticket for aprovado */}
+          {isTicketApproved && <AprovarTicket />}
         </div>
       ) : (
         <p className="text-center text-gray-600 mt-4">Posicione o QR Code na frente da câmera.</p>
@@ -69,3 +81,5 @@ export const LerQrCode = () => {
     </div>
   );
 };
+
+export default LerQrCode;

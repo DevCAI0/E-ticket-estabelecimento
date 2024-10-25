@@ -1,7 +1,6 @@
 import CardList from "@/components/cards/card-list";
 import InstallPWAButton from "./InstallPWAButton";
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 interface Ticket {
   numeroTicket: string;
@@ -29,21 +28,20 @@ export const TicketSummaryCard = () => {
   }, []);
 
   return (
-    <div className="bg-blue-500 text-white p-6 rounded-lg shadow-md w-80 h-40">
+    <div className="bg-blue-500 text-white p-6 rounded-lg shadow-lg w-80 h-44">
       <h2 className="text-2xl font-bold mb-4">Tickets lidos nas últimas 24 horas</h2>
       <p className="text-3xl">{ticketCount}</p>
     </div>
   );
 };
 
+
 export const Home = () => {
   return (
     <div className="flex flex-col items-center justify-start min-h-screen">
       <CardList />
       <InstallPWAButton />
-      <TicketSummaryCard/>
+      <TicketSummaryCard />
     </div>
   );
-}
- 
-
+};
