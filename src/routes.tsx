@@ -12,6 +12,7 @@ import { FaturamentoEstabelecimento } from "./pages/app/estabelecimento/faturame
 import { LerQrCode } from "./pages/app/estabelecimento/ler-qrcode";
 import { VerificarManual } from "./pages/app/estabelecimento/verificar-manual";
 import { SignIn } from "./pages/auth/sign-in";
+import { Profile } from "./pages/app/usuario/profile";
 
 // Definição do roteador
 export const router = createBrowserRouter([
@@ -27,13 +28,15 @@ export const router = createBrowserRouter([
       { path: '/estabelecimento/tickets-aprovados', element: <TicketsAprovados /> },
       { path: '/estabelecimento/faturamento', element: <FaturamentoEstabelecimento /> },
       { path: '/estabelecimento/enviar-notas', element: <EnviarNotas /> },
+      { path: '/usuario', element: <Profile /> },
     ],
   },
   {
     path: '/auth',
     element: <AuthLayout />,
     children: [
-      { path: '/auth/login', element: <SignIn/> },
+      { path: '/auth/login', element: <SignIn /> },
+      
     ],
   },
 ]);

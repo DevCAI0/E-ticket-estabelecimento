@@ -13,23 +13,23 @@ interface Ticket {
   numeroTicket: string;
   motorista: string;
   data: string;
-  status: 'aprovado' | 'negado'; // Status do ticket
+  status: 'aprovado' | 'Consumido'; // Status do ticket
 }
 
 export const TicketsAprovados = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [aprovados, setAprovados] = useState<Ticket[]>([]);
-  const [negados, setNegados] = useState<Ticket[]>([]);
+  const [consumidos, setConsumidos] = useState<Ticket[]>([]);
 
   useEffect(() => {
     const storedTickets = JSON.parse(localStorage.getItem('approvedTickets') || '[]');
     setTickets(storedTickets);
 
     const approved = storedTickets.filter((ticket: Ticket) => ticket.status === 'aprovado');
-    const denied = storedTickets.filter((ticket: Ticket) => ticket.status === 'negado');
+    const denied = storedTickets.filter((ticket: Ticket) => ticket.status === 'Consumido');
 
     setAprovados(approved);
-    setNegados(denied);
+    setConsumidos(denied);
   }, []);
 
   return (
@@ -49,10 +49,10 @@ export const TicketsAprovados = () => {
             Aprovados
           </TabsTrigger>
           <TabsTrigger 
-            value="negados" 
+            value="Consumidos" 
             className="flex-1 py-2 text-center hover:bg-red-200 border border-gray-300 rounded-t-lg"
           >
-            Invalidos
+            Consumidos
           </TabsTrigger>
         </TabsList>
 
@@ -98,10 +98,10 @@ export const TicketsAprovados = () => {
           )}
         </TabsContent>
 
-        {/* Conteúdo para tickets negados */}
-        <TabsContent value="negados" className="flex-1 overflow-auto">
-          {negados.length > 0 ? (
-            negados.map((ticket, index) => (
+        {/* Conteúdo para tickets consumidos */}
+        <TabsContent value="consumidos" className="flex-1 overflow-auto">
+          {consumidos.length > 0 ? (
+            consumidos.map((ticket, index) => (
               <Card key={index} className="mt-4 mx-4">
                 <CardHeader>
                   <CardTitle>{ticket.numeroTicket}</CardTitle>

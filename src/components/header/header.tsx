@@ -14,7 +14,7 @@ export function Header() {
             <TicketPlus className="h-4 w-4" />
             Tickets
           </NavLink>
-          <NavLink to="/orders">
+          <NavLink to="/usuario">
             <User className="h-4 w-4" />
             Perfil
           </NavLink>

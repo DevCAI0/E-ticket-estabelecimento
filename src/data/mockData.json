@@ -1,0 +1,17 @@
+[
+    {
+      "id": 1,
+      "name": "Caio Pereira Ribeiro",
+      "email": "caio@foodpass.com",
+      "password": "123456",
+      "token": "token-fake-caio"
+    },
+    {
+      "id": 2,
+      "name": "João Silva",
+      "email": "joao@foodpass.com",
+      "password": "654321",
+      "token": "token-fake-joao"
+    }
+  ]
+  

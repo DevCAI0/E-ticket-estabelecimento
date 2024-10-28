@@ -8,7 +8,7 @@
     "theme_color": "#ffffff",
     "icons": [
         {
-            "src": "/src/assets/icons/e-ticket.svg",
+            "src": "/src/assets/icons/logo.svg",
             "sizes": "any",
             "type": "image/svg+xml"
           }

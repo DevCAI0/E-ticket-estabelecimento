@@ -1,4 +1,3 @@
-// utils.ts
 import * as faceapi from 'face-api.js';
 
 export const loadLabeledImages = async () => {
@@ -28,6 +27,11 @@ export const compareFaces = (
 ) => {
   const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.5);
   const bestMatch = faceMatcher.findBestMatch(liveDescriptor);
-  console.log(`Similaridade: ${(1 - bestMatch.distance) * 100}%`);
+  
+  // Adicionar lógica de verificação para exibir apenas uma vez
+  if (bestMatch.label !== 'unknown') {
+    console.log(`Similaridade: ${(1 - bestMatch.distance) * 100}%`);
+  }
+
   return bestMatch.label !== 'unknown';
 };
