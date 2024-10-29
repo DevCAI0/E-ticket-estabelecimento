@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import BackButton from '@/components/BackButton';
 
 // Tipo de Ticket
 interface Ticket {
@@ -34,6 +35,11 @@ export const TicketsAprovados = () => {
 
   return (
     <div className="flex flex-col h-screen">
+      {/* Título e botão de voltar */}
+      <div className="flex items-center gap-4 mb-4">
+        <BackButton />
+        <h1 className="text-2xl font-bold">Tickets</h1>
+      </div>
       <Tabs defaultValue="todos" className="w-full h-full flex flex-col">
         <TabsList className="w-full flex bg-gray-200 rounded-t-lg">
           <TabsTrigger 

@@ -1,8 +1,8 @@
 [
     {
       "id": 1,
-      "name": "Caio Pereira Ribeiro",
-      "email": "caio@foodpass.com",
+      "name": "Allan De Oliveira Nascimento",
+      "email": "Admin@foodpass.com",
       "password": "123456",
       "token": "token-fake-caio"
     },

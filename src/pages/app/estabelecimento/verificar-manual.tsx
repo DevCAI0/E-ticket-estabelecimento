@@ -1,3 +1,4 @@
+import BackButton from '@/components/BackButton';
 import React, { useState } from 'react';
 
 export const VerificarManual = () => {
@@ -12,7 +13,13 @@ export const VerificarManual = () => {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Verificar Manualmente</h1>
+      {/* Título e botão de voltar */}
+      <div className="flex items-center gap-4 mb-4">
+        <BackButton />
+        <h1 className="text-2xl font-bold">Verificar Manualmente</h1>
+      </div>
+
+      {/* Formulário de verificação manual */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label className="block text-lg font-medium mb-1">CPF:</label>
@@ -21,7 +28,7 @@ export const VerificarManual = () => {
             value={cpf}
             onChange={(e) => setCpf(e.target.value)}
             placeholder="Digite o CPF"
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full p-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
           />
         </div>
         <div>
@@ -31,7 +38,7 @@ export const VerificarManual = () => {
             value={matricula}
             onChange={(e) => setMatricula(e.target.value)}
             placeholder="Digite a Matrícula"
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full p-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
           />
         </div>
         <button

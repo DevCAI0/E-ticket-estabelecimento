@@ -1,10 +1,11 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Bar, BarChart, CartesianGrid, XAxis, Tooltip, Legend } from "recharts"
-import { TrendingUp } from "lucide-react"
-import { DatePickerWithRange } from "./DatePickerWithRange"
-import { DateRange } from "react-day-picker"
+import { useEffect, useState } from "react";
+import { Bar, BarChart, CartesianGrid, XAxis, Tooltip, Legend } from "recharts";
+import { TrendingUp } from "lucide-react";
+import { DatePickerWithRange } from "./DatePickerWithRange";
+import { DateRange } from "react-day-picker";
+import BackButton from "@/components/BackButton";
 
 import {  
   Card,
@@ -13,7 +14,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 
 // Dados iniciais de tickets
 const initialChartData = [
@@ -23,47 +24,50 @@ const initialChartData = [
   { mes: "Abril", aprovados: 73, consumidos: 190 },
   { mes: "Maio", aprovados: 209, consumidos: 130 },
   { mes: "Junho", aprovados: 214, consumidos: 140 },
-]
+];
 
 export function RelatoriosEstabelecimento() {
-  const [chartWidth, setChartWidth] = useState(500)
-  const [chartData, setChartData] = useState(initialChartData)
-  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [chartWidth, setChartWidth] = useState(window.innerWidth < 640 ? window.innerWidth - 40 : 500);
+  const [chartData, setChartData] = useState(initialChartData);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   useEffect(() => {
     const updateChartSize = () => {
-      setChartWidth(window.innerWidth < 640 ? window.innerWidth - 40 : 500)
-    }
+      setChartWidth(window.innerWidth < 640 ? window.innerWidth - 40 : 500);
+    };
 
-    window.addEventListener("resize", updateChartSize)
-    updateChartSize()
+    window.addEventListener("resize", updateChartSize);
+    updateChartSize();
 
-    return () => window.removeEventListener("resize", updateChartSize)
-  }, [])
+    return () => window.removeEventListener("resize", updateChartSize);
+  }, []);
 
   // Atualiza os dados do gráfico com base no intervalo de datas selecionado
   useEffect(() => {
     if (dateRange?.from && dateRange?.to) {
-      const from = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), 1)
-      const to = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), 1)
+      const from = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), 1);
+      const to = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), 1);
 
       // Filtra os dados com base no intervalo de meses selecionados
       const filteredData = initialChartData.filter((data) => {
-        const mesIndex = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho"].indexOf(data.mes)
-        const currentDate = new Date(2024, mesIndex, 1)
-        return currentDate >= from && currentDate <= to
-      })
+        const mesIndex = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho"].indexOf(data.mes);
+        const currentDate = new Date(2024, mesIndex, 1);
+        return currentDate >= from && currentDate <= to;
+      });
 
-      setChartData(filteredData)
+      setChartData(filteredData);
     } else {
-      setChartData(initialChartData)
+      setChartData(initialChartData);
     }
-  }, [dateRange])
+  }, [dateRange]);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Relatório de Tickets</CardTitle>
+        <div className="flex items-center gap-4 mb-4">
+          <BackButton />
+          <CardTitle>Relatório de Tickets</CardTitle>
+        </div>
         <CardDescription>Filtre por período de datas</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -74,14 +78,16 @@ export function RelatoriosEstabelecimento() {
           setDateRange={setDateRange}
         />
         {/* Gráfico de barras */}
-        <BarChart width={chartWidth} height={300} data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="mes" />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="aprovados" fill="#8884d8" radius={4} />
-          <Bar dataKey="consumidos" fill="#82ca9d" radius={4} />
-        </BarChart>
+        <div className="flex justify-center">
+          <BarChart width={chartWidth} height={250} data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="mes" />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="aprovados" fill="#8884d8" radius={4} />
+            <Bar dataKey="consumidos" fill="#82ca9d" radius={4} />
+          </BarChart>
+        </div>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-sm">
         <div className="flex gap-2 font-medium leading-none">
@@ -92,5 +98,5 @@ export function RelatoriosEstabelecimento() {
         </div>
       </CardFooter>
     </Card>
-  )
+  );
 }

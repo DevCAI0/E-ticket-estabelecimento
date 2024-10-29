@@ -5,6 +5,7 @@ import EmailInput from './EmailInput';
 import PasswordInput from './PasswordInput';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { showErrorToast, showSuccessToast } from '@/components/ui/sonner';
 
 export const SignIn = () => {
   const { login } = useAuth();
@@ -12,17 +13,21 @@ export const SignIn = () => {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = login(email, password);
-    if (result.success) {
+    const result = await login(email, password);
+
+    if (result?.success && result.user) { // Verifica se 'result.user' existe
       // Armazena o token no localStorage
       localStorage.setItem('token', result.token || '');
+      // Exibe mensagem de sucesso
+      showSuccessToast(`Bem-vindo, ${result.user.name}!`);
       // Redireciona para a página inicial
       navigate('/', { replace: true });
     } else {
-      alert(`Erro: ${result.message || 'Falha na autenticação.'}`);
+      // Exibe mensagem de erro
+      showErrorToast(result?.message || 'Falha na autenticação.');
     }
   };
 

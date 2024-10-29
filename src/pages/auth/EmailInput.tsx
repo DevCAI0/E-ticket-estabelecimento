@@ -8,7 +8,7 @@ interface EmailInputProps {
 
 const EmailInput = ({ value, onChange }: EmailInputProps) => (
   <div className="grid gap-2">
-    <Label htmlFor="email">Seu e-mail</Label>
+    <Label htmlFor="email">Usuário</Label>
     <Input
       id="email"
       type="email"
@@ -17,7 +17,9 @@ const EmailInput = ({ value, onChange }: EmailInputProps) => (
       autoCapitalize="none"
       autoComplete="email"
       autoCorrect="off"
+      placeholder='Infome seu usuário'
       className="w-80 sm:w-96 outline-none"
+
     />
   </div>
 );

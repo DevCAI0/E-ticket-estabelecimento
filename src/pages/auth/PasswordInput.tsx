@@ -22,6 +22,7 @@ const PasswordInput = ({ value, onChange }: PasswordInputProps) => {
           autoCapitalize="none"
           autoComplete="password"
           autoCorrect="off"
+           placeholder='Infome se senha'
           className="w-80 sm:w-96 outline-none"
         />
         <button

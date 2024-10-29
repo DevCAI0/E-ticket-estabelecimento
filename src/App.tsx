@@ -6,8 +6,14 @@ import { queryClient } from "./lib/react-query";
 
 export function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Toaster />
+<QueryClientProvider client={queryClient}>
+      <Toaster 
+        position="top-center" 
+        toastOptions={{
+          duration: 1000,
+         
+        }} 
+      />
       <RouterProvider router={router} />
     </QueryClientProvider>
   )

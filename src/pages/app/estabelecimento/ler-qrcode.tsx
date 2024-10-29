@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import AprovarTicket from './aprovar-ticket';
 import { showErrorToast, showSuccessToast } from '@/components/ui/sonner';
+import BackButton from '@/components/BackButton';
 
 export const LerQrCode = () => {
   const [ticketInfo, setTicketInfo] = useState<any | null>(null);
@@ -87,24 +88,21 @@ export const LerQrCode = () => {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4 text-center">Leitor de QR Code</h1>
+     
+      <div className="flex items-center mb-4">
+        <BackButton />
+        <h1 className="text-2xl font-bold ml-2">Leitor de QR Code</h1>
+      </div>
 
       <div className="flex justify-center mb-4">
-        {!isScanning ? (
-          <button
-            onClick={startScanning}
-            className="py-2 px-6 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
-          >
-            Iniciar Escaneamento
-          </button>
-        ) : (
-          <button
-            onClick={stopScanning}
-            className="py-2 px-6 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition"
-          >
-            Parar Escaneamento
-          </button>
-        )}
+        <button
+          onClick={isScanning ? stopScanning : startScanning}
+          className={`py-2 px-6 font-semibold rounded-lg transition ${
+            isScanning ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+          } text-white`}
+        >
+          {isScanning ? 'Parar Escaneamento' : 'Iniciar Escaneamento'}
+        </button>
       </div>
 
       <div id="reader" className="w-full max-w-md mx-auto mt-4"></div>
