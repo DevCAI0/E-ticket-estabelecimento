@@ -54,6 +54,8 @@ export function QrScanner({ onScan }: QrScannerProps) {
         border: none !important;
         padding: 0 !important;
       }
+      
+      /* Remove elementos desnecessários */
       #leitor__dashboard_section_swaplink,
       #leitor__dashboard_section_fileselection,
       #leitor__header_message,
@@ -67,36 +69,48 @@ export function QrScanner({ onScan }: QrScannerProps) {
       #html5-qrcode-anchor-scan-type-change {
         display: none !important;
       }
+      
       #leitor__scan_region {
         padding: 0 !important;
         background: transparent !important;
         display: none; /* Hide initially */
       }
+      
       #leitor__scan_region.scanning {
         display: block; /* Show when scanning */
       }
+      
+      #leitor__scan_region > img {
+        display: none !important;
+      }
+      
       #leitor__scan_region video {
-        max-height: 100vh !important;
+        max-height: 300px !important;
         object-fit: cover !important;
         border-radius: 8px !important;
         background: transparent !important;
         transform: scaleX(-1); /* Espelha a câmera frontal se necessário */
       }
+      
       #leitor__camera_selection,
       #leitor__camera_permission {
         display: none !important;
       }
+      
       #leitor__dashboard {
         margin: 0 !important;
         padding: 0 !important;
       }
+      
       #leitor__dashboard_section {
         margin: 0 !important;
         padding: 0 !important;
       }
+
       #leitor__dashboard_section_csr {
         text-align: center !important;
       }
+
       .scanner-button {
         background-color: hsl(var(--primary)) !important;
         color: hsl(var(--primary-foreground)) !important;
@@ -111,12 +125,17 @@ export function QrScanner({ onScan }: QrScannerProps) {
         max-width: 200px !important;
         transition: opacity 0.2s !important;
       }
+
       .scanner-button:hover {
         opacity: 0.9 !important;
       }
+
+      /* Remove textos indesejados */
       #leitor__dashboard_section_csr span {
         display: none !important;
       }
+
+      /* Adiciona uma guia de alinhamento */
       #leitor__scan_region::after {
         content: '';
         position: absolute;
@@ -141,9 +160,11 @@ export function QrScanner({ onScan }: QrScannerProps) {
       rememberLastUsedCamera: true,
       focusMode: "continuous",
       videoConstraints: {
-        facingMode: { exact: "environment" }, // Garante a câmera traseira
+        facingMode: "environment",
         width: { min: 640, ideal: 720, max: 1920 },
         height: { min: 480, ideal: 720, max: 1080 },
+        focusMode: "continuous",
+        focusDistance: { ideal: 0.2 },
       },
     };
 
