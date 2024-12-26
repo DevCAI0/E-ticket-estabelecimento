@@ -16,6 +16,7 @@ export interface User {
   data_alteracao: string;
   permissions: Permissions;
   perfil_descricao: string;
+  id_grupo_permissoes?: number;
 }
 
 export interface Permissions {

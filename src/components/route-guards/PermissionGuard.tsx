@@ -1,7 +1,7 @@
 // src/components/route-guards/PermissionGuard.tsx
-import { FC, ReactNode } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { FC, ReactNode } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface PermissionGuardProps {
   children: ReactNode;
@@ -10,24 +10,24 @@ interface PermissionGuardProps {
 
 export const PermissionGuard: FC<PermissionGuardProps> = ({
   children,
-  permission
+  permission,
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Debug
-  console.log('PermissionGuard Check:', {
+  console.log("PermissionGuard Check:", {
     hasUser: !!user,
     groupId: user?.id_grupo_permissoes,
-    requiredPermission: permission
+    requiredPermission: permission,
   });
 
   // Se não tiver usuário ou grupo de permissão
   if (!user?.id_grupo_permissoes) {
-    navigate('/access-denied', { 
+    navigate("/access-denied", {
       replace: true,
-      state: { from: location.pathname } 
+      state: { from: location.pathname },
     });
     return null;
   }
