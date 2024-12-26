@@ -1,79 +1,135 @@
-// import { useState } from 'react';
-// import { loginUser } from '@/services/authService';
-// import { User } from '@/types/user';
-// import { showErrorToast, showSuccessToast } from '@/components/ui/sonner';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { api, storeEncryptedToken, clearEncryptedToken } from "@/lib/axios";
+import { showErrorToast, showSuccessToast } from "@/components/ui/sonner";
+import { decryptData, encryptData } from "@/lib/crypto";
+import { User, AuthCredentials, LoginResponse } from "@/types/user";
+import { AxiosError } from "axios";
 
-// export const useAuth = () => {
-//   const [user, setUser] = useState<User | null>(null);
-//   const [token, setToken] = useState<string | null>(null);
-
-//   const login = async (email: string, password: string) => {
-//     const response = await loginUser(email, password);
-
-//     if (response.success) {
-//       // Verificar se user e token não são undefined antes de definir o estado
-//       if (response.user && response.token) {
-//         setUser(response.user);
-//         setToken(response.token);
-
-//         // Salvar no localStorage para persistência
-//         localStorage.setItem('user', JSON.stringify(response.user));
-//         localStorage.setItem('token', response.token);
-
-//         showSuccessToast(`Bem-vindo, ${response.user.nome}!`);
-//       }
-//     } else {
-//       showErrorToast(response.message || 'Erro ao realizar o login.');
-//     }
-//   };
-
-//   const logout = () => {
-//     setUser(null);
-//     setToken(null);
-//     localStorage.removeItem('user');
-//     localStorage.removeItem('token');
-//     showSuccessToast('Logout realizado com sucesso.');
-//   };
-
-//   return { user, token, login, logout };
-// };
-import { useState } from 'react';
-import mockData from '@/data/mockData.json';
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  token: string;
+interface AuthError {
+  error?: string;
+  message?: string;
+  status?: number;
 }
 
-export const useAuth = () => {
+interface AuthResult {
+  success: boolean;
+  user?: User;
+  token?: string;
+  message?: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  signIn: (credentials: AuthCredentials) => Promise<AuthResult>;
+  logout: () => Promise<void>;
+}
+
+export const useAuth = (): AuthContextType => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  const login = (email: string, password: string) => {
-    // Busca o usuário no mockData
-    const foundUser = mockData.find(
-      (user) => user.email === email && user.password === password
-    );
+  useEffect(() => {
+    const loadUserData = async () => {
+      const encryptedUser = localStorage.getItem("encryptedUser");
+      const encryptedToken = localStorage.getItem("encryptedToken");
 
-    if (foundUser) {
-      setUser({
-        id: foundUser.id,
-        name: foundUser.name,
-        email: foundUser.email,
-        token: foundUser.token,
+      if (encryptedUser && encryptedToken) {
+        try {
+          const decryptedUser = JSON.parse(decryptData(encryptedUser)) as User;
+          const decryptedToken = decryptData(encryptedToken);
+
+          if (decryptedUser && decryptedToken) {
+            setUser(decryptedUser);
+            setToken(decryptedToken);
+            api.defaults.headers.common["Authorization"] =
+              `Bearer ${decryptedToken}`;
+          }
+        } catch (error) {
+          console.error("Erro ao carregar dados:", error);
+          localStorage.removeItem("encryptedUser");
+          localStorage.removeItem("encryptedToken");
+        }
+      }
+    };
+
+    loadUserData();
+  }, []);
+
+  const signIn = async (credentials: AuthCredentials): Promise<AuthResult> => {
+    try {
+      const { data: loginData } = await api.post<LoginResponse>("/auth/login", {
+        type: "tickets_usuarios",
+        identifier: credentials.identifier,
+        senha: credentials.senha,
       });
-      localStorage.setItem('token', foundUser.token);
-      return { success: true, user: foundUser, token: foundUser.token }; // Retorna sucesso
-    } else {
-      return { success: false, message: 'Credenciais inválidas.' }; // Retorna falha
+
+      const userData: User = {
+        ...loginData.user,
+        permissions: loginData.permissions,
+      };
+
+      // Armazena dados criptografados
+      storeEncryptedToken(loginData.token);
+      localStorage.setItem(
+        "encryptedUser",
+        encryptData(JSON.stringify(userData)),
+      );
+
+      // Atualiza estado
+      setUser(userData);
+      setToken(loginData.token);
+
+      // Configura token para requisições
+      api.defaults.headers.common["Authorization"] =
+        `Bearer ${loginData.token}`;
+
+      showSuccessToast(`Bem-vindo, ${userData.nome}!`);
+      return { success: true, user: userData, token: loginData.token };
+    } catch (error) {
+      const axiosError = error as AxiosError<AuthError>;
+      console.error("Erro login:", axiosError);
+
+      const errorMessage =
+        axiosError.response?.data?.error ||
+        axiosError.response?.data?.message ||
+        "Login ou senha inválidos";
+
+      showErrorToast(errorMessage);
+      return {
+        success: false,
+        message: errorMessage,
+      };
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('token');
+  const logout = async (): Promise<void> => {
+    try {
+      if (token) {
+        await api.post("/auth/logout");
+      }
+      showSuccessToast("Logout realizado com sucesso");
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      console.error("Erro ao realizar logout:", axiosError);
+    } finally {
+      setUser(null);
+      setToken(null);
+      clearEncryptedToken();
+      localStorage.removeItem("encryptedUser");
+      delete api.defaults.headers.common["Authorization"];
+      navigate("/auth/login", { replace: true });
+    }
   };
 
-  return { user, login, logout };
+  return {
+    user,
+    token,
+    signIn,
+    logout,
+  };
 };
+
+export default useAuth;

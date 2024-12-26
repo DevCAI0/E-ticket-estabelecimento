@@ -1,42 +1,57 @@
 import { createBrowserRouter } from "react-router-dom";
-import AppLayout from "./pages/_layouts/app";
-import { Home } from "./pages/app/dashboard/home";
+import { AppLayout } from "./pages/_layouts/app";
 import { AuthLayout } from "./pages/_layouts/auth";
-
-// Importação das novas páginas
-import { AprovarTicket } from "./pages/app/estabelecimento/aprovar-ticket"; 
-import { TicketsAprovados } from "./pages/app/estabelecimento/tickets-aprovados"; 
-import { EnviarNotas } from "./pages/app/estabelecimento/enviar-notas"; 
-import { RelatoriosEstabelecimento } from "./pages/app/estabelecimento/relatorios";
-import { FaturamentoEstabelecimento } from "./pages/app/estabelecimento/faturamento";
-import { LerQrCode } from "./pages/app/estabelecimento/ler-qrcode";
-import { VerificarManual } from "./pages/app/estabelecimento/verificar-manual";
-import { SignIn } from "./pages/auth/sign-in";
-import { Profile } from "./pages/app/usuario/profile";
+import Home from "./pages/app/dashboard/dashboard";
+import TicketsPage from "./pages/app/tickets";
+import SignIn from "./pages/auth/sign-in";
+import { AuthGuard, GuestGuard } from "./components/route-guards/AuthGuards";
+import { Ajustes } from "./pages/app/ajustes";
+import PaginaLeituraTickets from "./pages/app/tickets/leitura-tickets";
+import AprovarTickets from "./pages/app/tickets/aprovar-tickets";
+import VerificacaoManualPage from "./pages/app/tickets/verificacao-manual";
+import NotFound from "./pages/app/404";
 
 // Definição do roteador
 export const router = createBrowserRouter([
   {
-    path: '/',
-    element: <AppLayout />, // Layout principal
+    path: "/",
+    element: (
+      <AuthGuard>
+        <AppLayout />
+      </AuthGuard>
+    ),
+    errorElement: <NotFound />,
     children: [
-      { path: '/', element: <Home /> },
-      { path: '/estabelecimento/aprovar-ticket', element: <AprovarTicket /> },
-      { path: '/estabelecimento/relatorios', element: <RelatoriosEstabelecimento /> },
-      { path: '/estabelecimento/verificar-ticket/qrcode', element: <LerQrCode /> },
-      { path: '/estabelecimento/verificar-ticket/manual', element: <VerificarManual /> },
-      { path: '/estabelecimento/tickets-aprovados', element: <TicketsAprovados /> },
-      { path: '/estabelecimento/faturamento', element: <FaturamentoEstabelecimento /> },
-      { path: '/estabelecimento/enviar-notas', element: <EnviarNotas /> },
-      { path: '/usuario', element: <Profile /> },
+      { path: "/", element: <Home /> },
+      {
+        path: "/tickets",
+        element: <TicketsPage />,
+      },
+      {
+        path: "/settings",
+        element: <Ajustes />,
+      },
+      {
+        path: "/read-tickets",
+        element: <PaginaLeituraTickets />,
+      },
+      {
+        path: "/manual-check",
+        element: <VerificacaoManualPage />,
+      },
+      {
+        path: "/approve-tickets",
+        element: <AprovarTickets />,
+      },
     ],
   },
   {
-    path: '/auth',
-    element: <AuthLayout />,
-    children: [
-      { path: '/auth/login', element: <SignIn /> },
-      
-    ],
+    path: "/auth",
+    element: (
+      <GuestGuard>
+        <AuthLayout />
+      </GuestGuard>
+    ),
+    children: [{ path: "/auth/login", element: <SignIn /> }],
   },
 ]);

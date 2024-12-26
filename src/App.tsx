@@ -1,20 +1,14 @@
 import { RouterProvider } from "react-router-dom";
-import { router } from "./routes";
-import { Toaster } from "@/components/ui/sonner"
-import { QueryClientProvider } from "react-query";
-import { queryClient } from "./lib/react-query";
+import { ThemeProvider } from "@/components/Theme/theme-provider";
 
-export function App() {
+import { router } from "./routes";
+import { Toaster } from "sonner";
+
+export const App = () => {
   return (
-<QueryClientProvider client={queryClient}>
-      <Toaster 
-        position="top-center" 
-        toastOptions={{
-          duration: 1000,
-         
-        }} 
-      />
+    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <Toaster duration={1000} position="top-right" />
       <RouterProvider router={router} />
-    </QueryClientProvider>
-  )
-}
+    </ThemeProvider>
+  );
+};

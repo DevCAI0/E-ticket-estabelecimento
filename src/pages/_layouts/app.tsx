@@ -1,57 +1,79 @@
-import { useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
-import { Header } from '@/components/header/header';
+import { useEffect } from "react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Header } from "@/components/header";
+import { BottomNav } from "@/components/navigation/bottom-nav";
+import { useAuth } from "@/hooks/useAuth";
+import { decryptData } from "@/lib/crypto";
+import { InstallPromptDialog } from "@/components/InstallPromptDialog";
 
-// Função de verificação de autenticação
-const isAuthenticated = () => {
-  const token = localStorage.getItem('token');
-  // Verifica se o token existe e não está vazio
-  return token && token.trim().length > 0;
-};
-
-export const AppLayout = () => {
+export function AppLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, token } = useAuth();
+
+  const isAuthenticated = () => {
+    try {
+      const encryptedToken = localStorage.getItem("encryptedToken");
+      if (!encryptedToken) return false;
+
+      const decryptedToken = decryptData(encryptedToken);
+      return !!decryptedToken && decryptedToken.trim().length > 0;
+    } catch {
+      return false;
+    }
+  };
 
   useEffect(() => {
     const checkAuthentication = () => {
-      // Verifica se o usuário está autenticado
-      if (!isAuthenticated()) {
-        // Se não estiver autenticado, redireciona para a página de login
-        navigate('/auth/login', { replace: true });
+      if (isAuthenticated() && location.pathname === "/auth/login") {
+        navigate("/", { replace: true });
+        return;
+      }
+
+      if (!isAuthenticated() && location.pathname !== "/auth/login") {
+        navigate("/auth/login", { replace: true });
       }
     };
 
-    // Executa a verificação de autenticação ao montar o componente
     checkAuthentication();
 
-    // Adiciona um evento de verificação de token ao remover do localStorage
-    const handleStorageChange = () => {
-      if (!isAuthenticated()) {
-        navigate('/auth/login', { replace: true });
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "encryptedToken" && !isAuthenticated()) {
+        navigate("/auth/sign-in", { replace: true });
       }
     };
 
-    // Ouvinte para mudanças no localStorage, incluindo remoção do token
-    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener("storage", handleStorageChange);
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
+
+  // Loading state
+  if (!user || !token) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Impede renderização do layout em rotas de auth
+  if (location.pathname === "/auth/sign-in" && isAuthenticated()) {
+    return null;
+  }
 
   return (
-    <div className="flex flex-col min-h-screen w-full overflow-hidden bg-gray-200">
-      {/* Conteúdo principal */}
-      <div className="flex-1 w-full p-4 overflow-auto mb-16">
-        <Outlet />
-      </div>
-
-      {/* Barra de navegação inferior para Mobile */}
-      <div className="fixed bottom-0 w-full">
-        <Header />
-      </div>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main className="px-4 pb-16 pt-14">
+        <div className="mx-auto max-w-lg">
+          <Outlet />
+        </div>
+      </main>
+      <BottomNav />
+      <InstallPromptDialog />
     </div>
   );
-};
-
-export default AppLayout;
+}
