@@ -1,5 +1,5 @@
 // src/pages/tickets/leitura-ticket.tsx
-import { LeitorQRCode } from "@/components/tickets/leitor-qrcode";
+import LerQrCode from "@/components/tickets/leitor-qrcode";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -27,7 +27,7 @@ export function PaginaLeituraTickets() {
           </Button>
           <h1 className="text-2xl font-bold">Leitura de Tickets</h1>
         </div>
-        <LeitorQRCode />
+        <LerQrCode />
       </div>
     </div>
   );
