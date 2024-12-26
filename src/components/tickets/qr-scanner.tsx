@@ -1,6 +1,9 @@
 import { useEffect, useCallback, useReducer } from "react";
-import { Html5QrcodeScanner } from "html5-qrcode";
-import { QrCode } from "lucide-react";
+import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { QrCode, Camera } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface QrScannerProps {
   onScan: (result: string) => void;
@@ -8,13 +11,17 @@ interface QrScannerProps {
 
 type ScannerState = {
   isScanning: boolean;
+  hasCameraPermission: boolean;
   scanner: Html5QrcodeScanner | null;
+  error: string | null;
 };
 
 type ScannerAction =
   | { type: "INIT_SCANNER"; scanner: Html5QrcodeScanner }
   | { type: "START_SCANNING" }
-  | { type: "STOP_SCANNING" };
+  | { type: "STOP_SCANNING" }
+  | { type: "SET_CAMERA_PERMISSION"; hasPermission: boolean }
+  | { type: "SET_ERROR"; error: string };
 
 function scannerReducer(
   state: ScannerState,
@@ -22,20 +29,15 @@ function scannerReducer(
 ): ScannerState {
   switch (action.type) {
     case "INIT_SCANNER":
-      return {
-        ...state,
-        scanner: action.scanner,
-      };
+      return { ...state, scanner: action.scanner };
     case "START_SCANNING":
-      return {
-        ...state,
-        isScanning: true,
-      };
+      return { ...state, isScanning: true, error: null };
     case "STOP_SCANNING":
-      return {
-        ...state,
-        isScanning: false,
-      };
+      return { ...state, isScanning: false };
+    case "SET_CAMERA_PERMISSION":
+      return { ...state, hasCameraPermission: action.hasPermission };
+    case "SET_ERROR":
+      return { ...state, error: action.error, isScanning: false };
     default:
       return state;
   }
@@ -44,8 +46,68 @@ function scannerReducer(
 export function QrScanner({ onScan }: QrScannerProps) {
   const [state, dispatch] = useReducer(scannerReducer, {
     isScanning: false,
+    hasCameraPermission: false,
     scanner: null,
+    error: null,
   });
+
+  const startScanning = useCallback(() => {
+    if (state.scanner && state.hasCameraPermission) {
+      state.scanner.render(
+        (result: string) => {
+          onScan(result);
+          if (state.scanner) {
+            state.scanner.clear();
+            dispatch({ type: "STOP_SCANNING" });
+          }
+        },
+        (error: string) => {
+          if (
+            !error.includes(
+              "No MultiFormat Readers were able to detect the code",
+            )
+          ) {
+            console.warn(error);
+          }
+        },
+      );
+      dispatch({ type: "START_SCANNING" });
+    }
+  }, [state.scanner, state.hasCameraPermission, onScan]);
+
+  const stopScanning = useCallback(() => {
+    if (state.scanner) {
+      state.scanner.clear();
+      dispatch({ type: "STOP_SCANNING" });
+    }
+  }, [state.scanner]);
+
+  const requestCameraPermission = useCallback(async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { exact: "environment" },
+          width: { min: 320, ideal: 720, max: 1280 },
+          height: { min: 240, ideal: 540, max: 960 },
+        },
+      });
+      dispatch({ type: "SET_CAMERA_PERMISSION", hasPermission: true });
+      startScanning();
+    } catch {
+      try {
+        await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+        });
+        dispatch({ type: "SET_CAMERA_PERMISSION", hasPermission: true });
+        startScanning();
+      } catch {
+        dispatch({
+          type: "SET_ERROR",
+          error: "Não foi possível acessar a câmera. Verifique as permissões.",
+        });
+      }
+    }
+  }, [startScanning]);
 
   const customizeInterface = useCallback(() => {
     const style = document.createElement("style");
@@ -53,6 +115,25 @@ export function QrScanner({ onScan }: QrScannerProps) {
       #leitor {
         border: none !important;
         padding: 0 !important;
+        width: 100% !important;
+      }
+      
+      #leitor__scan_region {
+        padding: 0 !important;
+        background: transparent !important;
+        min-height: 300px !important;
+        max-height: 70vh !important;
+        display: block !important; /* Alterado para block */
+        position: relative !important;
+        margin: 1.5rem 0 !important;
+      }
+      
+      #leitor__scan_region video {
+        width: 100% !important;
+        height: 300px !important; /* Altura fixa */
+        object-fit: cover !important;
+        border-radius: 12px !important;
+        background: hsl(var(--muted)) !important;
       }
       
       /* Remove elementos desnecessários */
@@ -61,42 +142,14 @@ export function QrScanner({ onScan }: QrScannerProps) {
       #leitor__header_message,
       #leitor__status_span,
       #leitor__camera_permission_button,
-      img[alt="Info icon"],
-      a[rel="noopener noreferrer"],
       #leitor select,
       #leitor__scan_region_label,
       #leitor__filescan_input,
-      #html5-qrcode-anchor-scan-type-change {
+      #html5-qrcode-anchor-scan-type-change,
+      #leitor__dashboard_section_csr span {
         display: none !important;
       }
-      
-      #leitor__scan_region {
-        padding: 0 !important;
-        background: transparent !important;
-        display: none; /* Hide initially */
-      }
-      
-      #leitor__scan_region.scanning {
-        display: block; /* Show when scanning */
-      }
-      
-      #leitor__scan_region > img {
-        display: none !important;
-      }
-      
-      #leitor__scan_region video {
-        max-height: 300px !important;
-        object-fit: cover !important;
-        border-radius: 8px !important;
-        background: transparent !important;
-        transform: scaleX(-1); /* Espelha a câmera frontal se necessário */
-      }
-      
-      #leitor__camera_selection,
-      #leitor__camera_permission {
-        display: none !important;
-      }
-      
+  
       #leitor__dashboard {
         margin: 0 !important;
         padding: 0 !important;
@@ -106,36 +159,7 @@ export function QrScanner({ onScan }: QrScannerProps) {
         margin: 0 !important;
         padding: 0 !important;
       }
-
-      #leitor__dashboard_section_csr {
-        text-align: center !important;
-      }
-
-      .scanner-button {
-        background-color: hsl(var(--primary)) !important;
-        color: hsl(var(--primary-foreground)) !important;
-        border: none !important;
-        border-radius: 0.375rem !important;
-        padding: 0.75rem !important;
-        margin-top: 1rem !important;
-        cursor: pointer !important;
-        font-size: 0.875rem !important;
-        font-weight: 500 !important;
-        width: 100% !important;
-        max-width: 200px !important;
-        transition: opacity 0.2s !important;
-      }
-
-      .scanner-button:hover {
-        opacity: 0.9 !important;
-      }
-
-      /* Remove textos indesejados */
-      #leitor__dashboard_section_csr span {
-        display: none !important;
-      }
-
-      /* Adiciona uma guia de alinhamento */
+  
       #leitor__scan_region::after {
         content: '';
         position: absolute;
@@ -145,7 +169,7 @@ export function QrScanner({ onScan }: QrScannerProps) {
         width: 200px;
         height: 200px;
         border: 2px solid hsl(var(--primary));
-        border-radius: 8px;
+        border-radius: 12px;
         pointer-events: none;
       }
     `;
@@ -154,17 +178,14 @@ export function QrScanner({ onScan }: QrScannerProps) {
 
   useEffect(() => {
     const config = {
-      fps: 15,
+      fps: 10,
       qrbox: { width: 200, height: 200 },
-      aspectRatio: 1.0,
-      rememberLastUsedCamera: true,
-      focusMode: "continuous",
+      aspectRatio: 1.333333, // Relação 4:3
+      formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
       videoConstraints: {
-        facingMode: "environment",
-        width: { min: 640, ideal: 720, max: 1920 },
-        height: { min: 480, ideal: 720, max: 1080 },
-        focusMode: "continuous",
-        focusDistance: { ideal: 0.2 },
+        facingMode: "environment", // Removido exact para maior compatibilidade
+        width: { min: 320, ideal: 720, max: 1280 },
+        height: { min: 240, ideal: 540, max: 960 },
       },
     };
 
@@ -179,69 +200,57 @@ export function QrScanner({ onScan }: QrScannerProps) {
     };
   }, [customizeInterface]);
 
-  const handleScanSuccess = useCallback(
-    (result: string) => {
-      onScan(result);
-      if (state.scanner) {
-        state.scanner.clear();
-        dispatch({ type: "STOP_SCANNING" });
-
-        const scanRegion = document.querySelector("#leitor__scan_region");
-        if (scanRegion) {
-          scanRegion.classList.remove("scanning");
-        }
-      }
-    },
-    [onScan, state.scanner],
-  );
-
-  const handleScanFailure = useCallback((error: string) => {
-    if (
-      !error.includes("No MultiFormat Readers were able to detect the code")
-    ) {
-      console.warn(error);
-    }
-  }, []);
-
-  const startScanning = useCallback(() => {
-    if (state.scanner) {
-      state.scanner.render(handleScanSuccess, handleScanFailure);
-      dispatch({ type: "START_SCANNING" });
-
-      const scanRegion = document.querySelector("#leitor__scan_region");
-      if (scanRegion) {
-        scanRegion.classList.add("scanning");
-      }
-    }
-  }, [state.scanner, handleScanSuccess, handleScanFailure]);
-
-  const stopScanning = useCallback(() => {
-    if (state.scanner) {
-      state.scanner.clear();
-      dispatch({ type: "STOP_SCANNING" });
-
-      const scanRegion = document.querySelector("#leitor__scan_region");
-      if (scanRegion) {
-        scanRegion.classList.remove("scanning");
-      }
-    }
-  }, [state.scanner]);
-
   return (
-    <div className="flex flex-col items-center gap-2">
-      <QrCode className="mb-2 h-8 w-8 text-primary" />
-      <h2 className="mb-4 text-center text-lg font-semibold text-foreground">
-        {state.isScanning
-          ? "Posicione o QR Code na guia"
-          : "Clique para iniciar a leitura"}
-      </h2>
-      <div id="leitor" className="w-full" />
-      <button
-        onClick={state.isScanning ? stopScanning : startScanning}
-        className="scanner-button"
-      >
-        {state.isScanning ? "Parar Leitura" : "Iniciar Leitura"}
-      </button>
-    </div>
+    <Card className="border-none bg-transparent shadow-none">
+      <CardContent className="space-y-6 p-0">
+        <div className="flex flex-col items-center gap-4">
+          <QrCode className="h-12 w-12 text-primary" />
+          <div className="text-center">
+            <h2 className="text-lg font-semibold text-foreground">
+              Leitor QR Code
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {state.isScanning
+                ? "Posicione o QR Code na guia"
+                : "Permita o acesso à câmera para iniciar"}
+            </p>
+          </div>
+        </div>
+
+        <div id="leitor" className="w-full">
+          {!state.hasCameraPermission && (
+            <Alert>
+              <Camera className="h-4 w-4" />
+              <AlertDescription>
+                {state.error || "Permita o acesso à câmera para continuar"}
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+
+        <div className="flex justify-center">
+          {!state.hasCameraPermission ? (
+            <Button
+              variant="default"
+              size="lg"
+              onClick={requestCameraPermission}
+              className="min-w-[200px]"
+            >
+              <Camera className="mr-2 h-4 w-4" />
+              Permitir Câmera
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              size="lg"
+              onClick={state.isScanning ? stopScanning : startScanning}
+              className="min-w-[200px]"
+            >
+              {state.isScanning ? "Parar Leitura" : "Iniciar Leitura"}
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
