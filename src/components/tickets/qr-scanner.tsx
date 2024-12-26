@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useReducer } from "react";
+import { useEffect, useCallback, useReducer, useState } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { QrCode } from "lucide-react";
 
@@ -46,6 +46,8 @@ export function QrScanner({ onScan }: QrScannerProps) {
     isScanning: false,
     scanner: null,
   });
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [selectedCamera, setSelectedCamera] = useState<string>("");
 
   const customizeInterface = useCallback(() => {
     const style = document.createElement("style");
@@ -89,7 +91,7 @@ export function QrScanner({ onScan }: QrScannerProps) {
         object-fit: cover !important;
         border-radius: 8px !important;
         background: transparent !important;
-        transform: scaleX(-1); /* Espelha a câmera frontal se necessário */
+        transform: scaleX(-1);
       }
       
       #leitor__camera_selection,
@@ -130,12 +132,10 @@ export function QrScanner({ onScan }: QrScannerProps) {
         opacity: 0.9 !important;
       }
 
-      /* Remove textos indesejados */
       #leitor__dashboard_section_csr span {
         display: none !important;
       }
 
-      /* Adiciona uma guia de alinhamento */
       #leitor__scan_region::after {
         content: '';
         position: absolute;
@@ -148,11 +148,43 @@ export function QrScanner({ onScan }: QrScannerProps) {
         border-radius: 8px;
         pointer-events: none;
       }
+
+      .camera-select {
+        width: 100% !important;
+        max-width: 200px !important;
+        padding: 0.5rem !important;
+        border-radius: 0.375rem !important;
+        border: 1px solid hsl(var(--border)) !important;
+        background-color: hsl(var(--background)) !important;
+        color: hsl(var(--foreground)) !important;
+        margin-bottom: 1rem !important;
+      }
     `;
     document.head.appendChild(style);
   }, []);
 
   useEffect(() => {
+    const getCameras = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(
+          (device) => device.kind === "videoinput",
+        );
+        setCameras(videoDevices);
+        if (videoDevices.length > 0) {
+          setSelectedCamera(videoDevices[0].deviceId);
+        }
+      } catch (error) {
+        console.error("Error getting cameras:", error);
+      }
+    };
+
+    getCameras();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedCamera) return;
+
     const config = {
       fps: 15,
       qrbox: { width: 200, height: 200 },
@@ -160,7 +192,7 @@ export function QrScanner({ onScan }: QrScannerProps) {
       rememberLastUsedCamera: true,
       focusMode: "continuous",
       videoConstraints: {
-        facingMode: "environment",
+        deviceId: selectedCamera,
         width: { min: 640, ideal: 720, max: 1920 },
         height: { min: 480, ideal: 720, max: 1080 },
         focusMode: "continuous",
@@ -177,7 +209,7 @@ export function QrScanner({ onScan }: QrScannerProps) {
         newScanner.clear();
       }
     };
-  }, [customizeInterface]);
+  }, [customizeInterface, selectedCamera]);
 
   const handleScanSuccess = useCallback(
     (result: string) => {
@@ -227,6 +259,13 @@ export function QrScanner({ onScan }: QrScannerProps) {
     }
   }, [state.scanner]);
 
+  const handleCameraChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    if (state.isScanning) {
+      stopScanning();
+    }
+    setSelectedCamera(event.target.value);
+  };
+
   return (
     <div className="flex flex-col items-center gap-2">
       <QrCode className="mb-2 h-8 w-8 text-primary" />
@@ -235,6 +274,17 @@ export function QrScanner({ onScan }: QrScannerProps) {
           ? "Posicione o QR Code na guia"
           : "Clique para iniciar a leitura"}
       </h2>
+      <select
+        className="camera-select"
+        value={selectedCamera}
+        onChange={handleCameraChange}
+      >
+        {cameras.map((camera) => (
+          <option key={camera.deviceId} value={camera.deviceId}>
+            {camera.label || `Câmera ${cameras.indexOf(camera) + 1}`}
+          </option>
+        ))}
+      </select>
       <div id="leitor" className="w-full" />
       <button
         onClick={state.isScanning ? stopScanning : startScanning}
