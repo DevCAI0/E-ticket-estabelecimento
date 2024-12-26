@@ -4,6 +4,7 @@ import { QrCode, Camera } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 interface QrScannerProps {
   onScan: (result: string) => void;
@@ -67,7 +68,10 @@ export function QrScanner({ onScan }: QrScannerProps) {
               "No MultiFormat Readers were able to detect the code",
             )
           ) {
-            console.warn(error);
+            console.warn("Erro na leitura:", error);
+            toast.error("Erro na leitura do QR Code", {
+              description: error,
+            });
           }
         },
       );
@@ -93,17 +97,30 @@ export function QrScanner({ onScan }: QrScannerProps) {
       });
       dispatch({ type: "SET_CAMERA_PERMISSION", hasPermission: true });
       startScanning();
-    } catch {
+    } catch (error) {
+      console.error("Erro câmera traseira:", error);
+      toast.error("Erro ao acessar câmera traseira", {
+        description: error instanceof Error ? error.message : String(error),
+      });
+
       try {
         await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user" },
         });
         dispatch({ type: "SET_CAMERA_PERMISSION", hasPermission: true });
         startScanning();
-      } catch {
+      } catch (frontError) {
+        const errorMsg =
+          frontError instanceof Error ? frontError.message : String(frontError);
+        console.error("Erro câmera frontal:", errorMsg);
+
         dispatch({
           type: "SET_ERROR",
-          error: "Não foi possível acessar a câmera. Verifique as permissões.",
+          error: `Erro ao acessar câmeras: ${errorMsg}`,
+        });
+
+        toast.error("Erro ao acessar câmeras", {
+          description: errorMsg,
         });
       }
     }
@@ -112,67 +129,80 @@ export function QrScanner({ onScan }: QrScannerProps) {
   const customizeInterface = useCallback(() => {
     const style = document.createElement("style");
     style.textContent = `
-      #leitor {
-        border: none !important;
-        padding: 0 !important;
-        width: 100% !important;
-      }
-      
-      #leitor__scan_region {
-        padding: 0 !important;
-        background: transparent !important;
-        min-height: 300px !important;
-        max-height: 70vh !important;
-        display: block !important; /* Alterado para block */
-        position: relative !important;
-        margin: 1.5rem 0 !important;
-      }
-      
-      #leitor__scan_region video {
-        width: 100% !important;
-        height: 300px !important; /* Altura fixa */
-        object-fit: cover !important;
-        border-radius: 12px !important;
-        background: hsl(var(--muted)) !important;
-      }
-      
-      /* Remove elementos desnecessários */
-      #leitor__dashboard_section_swaplink,
-      #leitor__dashboard_section_fileselection,
-      #leitor__header_message,
-      #leitor__status_span,
-      #leitor__camera_permission_button,
-      #leitor select,
-      #leitor__scan_region_label,
-      #leitor__filescan_input,
-      #html5-qrcode-anchor-scan-type-change,
-      #leitor__dashboard_section_csr span {
-        display: none !important;
-      }
-  
-      #leitor__dashboard {
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-      
-      #leitor__dashboard_section {
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-  
-      #leitor__scan_region::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 200px;
-        height: 200px;
-        border: 2px solid hsl(var(--primary));
-        border-radius: 12px;
-        pointer-events: none;
-      }
-    `;
+     #leitor {
+       border: none !important;
+       padding: 0 !important;
+       width: 100% !important;
+     }
+     
+     #leitor__scan_region {
+       padding: 0 !important;
+       background: transparent !important;
+       min-height: 300px !important;
+       max-height: 70vh !important;
+       display: block !important;
+       position: relative !important;
+       margin: 1.5rem 0 !important;
+     }
+     
+     #leitor__scan_region video {
+       width: 100% !important;
+       height: 300px !important;
+       object-fit: cover !important;
+       border-radius: 12px !important;
+       background: hsl(var(--muted)) !important;
+     }
+     
+     #leitor__dashboard_section_swaplink,
+     #leitor__dashboard_section_fileselection,
+     #leitor__header_message,
+     #leitor__status_span,
+     #leitor__camera_permission_button,
+     #leitor select,
+     #leitor__scan_region_label,
+     #leitor__filescan_input,
+     #html5-qrcode-anchor-scan-type-change,
+     #leitor__dashboard_section_csr span {
+       display: none !important;
+     }
+
+     #leitor__dashboard {
+       margin: 0 !important;
+       padding: 0 !important;
+     }
+     
+     #leitor__dashboard_section {
+       margin: 0 !important;
+       padding: 0 !important;
+     }
+
+     #leitor__scan_region::after {
+       content: '';
+       position: absolute;
+       top: 50%;
+       left: 50%;
+       transform: translate(-50%, -50%);
+       width: 200px;
+       height: 200px;
+       border: 2px solid hsl(var(--primary));
+       border-radius: 12px;
+       pointer-events: none;
+     }
+
+     .camera-error {
+       margin-top: 0.5rem;
+       padding: 0.75rem;
+       border-radius: 0.375rem;
+       background: hsl(var(--destructive) / 0.1);
+       border: 1px solid hsl(var(--destructive));
+     }
+
+     .camera-error-message {
+       color: hsl(var(--destructive));
+       font-size: 0.875rem;
+       line-height: 1.25rem;
+     }
+   `;
     document.head.appendChild(style);
   }, []);
 
@@ -180,10 +210,10 @@ export function QrScanner({ onScan }: QrScannerProps) {
     const config = {
       fps: 10,
       qrbox: { width: 200, height: 200 },
-      aspectRatio: 1.333333, // Relação 4:3
+      aspectRatio: 1.333333,
       formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
       videoConstraints: {
-        facingMode: "environment", // Removido exact para maior compatibilidade
+        facingMode: "environment",
         width: { min: 320, ideal: 720, max: 1280 },
         height: { min: 240, ideal: 540, max: 960 },
       },
@@ -219,11 +249,16 @@ export function QrScanner({ onScan }: QrScannerProps) {
 
         <div id="leitor" className="w-full">
           {!state.hasCameraPermission && (
-            <Alert>
+            <Alert variant="destructive">
               <Camera className="h-4 w-4" />
               <AlertDescription>
                 {state.error || "Permita o acesso à câmera para continuar"}
               </AlertDescription>
+              {state.error && (
+                <div className="camera-error">
+                  <p className="camera-error-message">{state.error}</p>
+                </div>
+              )}
             </Alert>
           )}
         </div>
