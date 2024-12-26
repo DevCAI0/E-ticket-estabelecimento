@@ -38,6 +38,7 @@ const LeitorQRCode = () => {
               onError={handleError}
               onScan={handleScan}
               style={{ width: "100%", height: "100%" }}
+              facingMode="rear"
             />
           </div>
 
