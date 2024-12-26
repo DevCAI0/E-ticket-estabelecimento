@@ -192,7 +192,8 @@ export function QrScanner({ onScan }: QrScannerProps) {
       rememberLastUsedCamera: true,
       focusMode: "continuous",
       videoConstraints: {
-        deviceId: selectedCamera,
+        deviceId: window.innerWidth > 768 ? selectedCamera : undefined,
+        facingMode: window.innerWidth <= 768 ? "environment" : undefined,
         width: { min: 640, ideal: 720, max: 1920 },
         height: { min: 480, ideal: 720, max: 1080 },
         focusMode: "continuous",
