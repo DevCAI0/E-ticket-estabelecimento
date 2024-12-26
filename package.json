@@ -34,6 +34,7 @@
     "framer-motion": "^11.15.0",
     "html5-qrcode": "^2.3.8",
     "jsonwebtoken": "^9.0.2",
+    "jsqr": "^1.4.0",
     "lucide-react": "^0.453.0",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",
