@@ -1,5 +1,5 @@
 // src/pages/tickets/leitura-ticket.tsx
-import LeitorQRCode from "@/components/tickets/leitor-qrcode";
+import { LeitorQRCode } from "@/components/tickets/leitor-qrcode";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
