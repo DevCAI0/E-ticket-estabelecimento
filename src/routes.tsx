@@ -2,7 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "./pages/_layouts/app";
 import { AuthLayout } from "./pages/_layouts/auth";
 import Home from "./pages/app/dashboard/dashboard";
-import TicketsPage from "./pages/app/tickets";
+// import TicketsPage from "./pages/app/tickets";
 import SignIn from "./pages/auth/sign-in";
 import { AuthGuard, GuestGuard } from "./components/route-guards/AuthGuards";
 import { Ajustes } from "./pages/app/ajustes";
@@ -23,10 +23,10 @@ export const router = createBrowserRouter([
     errorElement: <NotFound />,
     children: [
       { path: "/", element: <Home /> },
-      {
-        path: "/tickets",
-        element: <TicketsPage />,
-      },
+      // {
+      //   path: "/tickets",
+      //   element: <TicketsPage />,
+      // },
       {
         path: "/settings",
         element: <Ajustes />,
