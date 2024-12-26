@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import * as faceapi from 'face-api.js';
-import { VerificationState, VerificationStates } from '@/types/verification';
-import { SelectionState } from '@/types/releases';
-import { compareFaces, loadLabeledImages } from '@/utils/utils';
-import { useReleases } from '@/hooks/useReleases';
+import { useEffect, useRef, useState } from "react";
+import * as faceapi from "face-api.js";
+import { VerificationState, VerificationStates } from "@/types/verification";
+import { SelectionState } from "@/types/releases";
+import { compareFaces, loadLabeledImages } from "@/utils/utils";
+import { useReleases } from "@/hooks/useReleases";
 
 interface VerificationStatus {
   isMatch: boolean;
@@ -24,15 +24,18 @@ interface UseFacialRecognitionReturn {
 
 export function useFacialRecognition(
   selection: SelectionState,
-  onVerificationComplete?: (isApproved: boolean) => void
+  onVerificationComplete?: (isApproved: boolean) => void,
 ): UseFacialRecognitionReturn {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [faceDetected, setFaceDetected] = useState(false);
-  const [verificationState, setVerificationState] = useState<VerificationState>(VerificationStates.PREPARING);
-  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>({
-    isMatch: false,
-    similarity: 0,
-  });
+  const [verificationState, setVerificationState] = useState<VerificationState>(
+    VerificationStates.PREPARING,
+  );
+  const [verificationStatus, setVerificationStatus] =
+    useState<VerificationStatus>({
+      isMatch: false,
+      similarity: 0,
+    });
   const { solicitarTicket } = useReleases();
 
   const detectionInterval = useRef<NodeJS.Timeout>();
@@ -41,7 +44,7 @@ export function useFacialRecognition(
   const stopCamera = () => {
     if (videoRef.current?.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       videoRef.current.srcObject = null;
     }
     if (detectionInterval.current) clearInterval(detectionInterval.current);
@@ -51,7 +54,7 @@ export function useFacialRecognition(
   };
 
   const loadModels = async () => {
-    const MODEL_URL = '/models';
+    const MODEL_URL = "/models";
     try {
       await Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
@@ -60,7 +63,7 @@ export function useFacialRecognition(
       ]);
       return true;
     } catch (error) {
-      console.error('Erro ao carregar modelos:', error);
+      console.error("Erro ao carregar modelos:", error);
       return false;
     }
   };
@@ -74,19 +77,25 @@ export function useFacialRecognition(
       try {
         const detections = await faceapi.detectAllFaces(
           videoRef.current,
-          new faceapi.TinyFaceDetectorOptions()
+          new faceapi.TinyFaceDetectorOptions(),
         );
 
         const isFaceDetected = detections.length === 1;
         setFaceDetected(isFaceDetected);
 
-        if (isFaceDetected && verificationState === VerificationStates.POSITIONING) {
+        if (
+          isFaceDetected &&
+          verificationState === VerificationStates.POSITIONING
+        ) {
           setVerificationState(VerificationStates.READY);
-        } else if (!isFaceDetected && verificationState === VerificationStates.READY) {
+        } else if (
+          !isFaceDetected &&
+          verificationState === VerificationStates.READY
+        ) {
           setVerificationState(VerificationStates.POSITIONING);
         }
       } catch (error) {
-        console.error('Erro na detecção:', error);
+        console.error("Erro na detecção:", error);
       }
     }, 200);
   };
@@ -102,7 +111,7 @@ export function useFacialRecognition(
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'environment',
+          facingMode: "environment",
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
@@ -113,7 +122,7 @@ export function useFacialRecognition(
         await startPositionDetection();
       }
     } catch (error) {
-      console.error('Erro ao inicializar câmera:', error);
+      console.error("Erro ao inicializar câmera:", error);
       setVerificationState(VerificationStates.DENIED);
       onVerificationComplete?.(false);
     }
@@ -144,7 +153,10 @@ export function useFacialRecognition(
         if (!videoRef.current) return;
 
         const detections = await faceapi
-          .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+          .detectAllFaces(
+            videoRef.current,
+            new faceapi.TinyFaceDetectorOptions(),
+          )
           .withFaceLandmarks()
           .withFaceDescriptors();
 
@@ -153,7 +165,7 @@ export function useFacialRecognition(
             labeledDescriptors,
             detections[0].descriptor,
             solicitarTicket,
-            selection
+            selection,
           );
 
           setVerificationStatus({
@@ -165,7 +177,9 @@ export function useFacialRecognition(
 
           const isApproved = result.isMatch;
           setVerificationState(
-            isApproved ? VerificationStates.APPROVED : VerificationStates.DENIED
+            isApproved
+              ? VerificationStates.APPROVED
+              : VerificationStates.DENIED,
           );
 
           stopCamera();
@@ -177,7 +191,7 @@ export function useFacialRecognition(
 
       verify();
     } catch (error) {
-      console.error('Erro na verificação:', error);
+      console.error("Erro na verificação:", error);
       setVerificationState(VerificationStates.DENIED);
       stopCamera();
       onVerificationComplete?.(false);
@@ -196,5 +210,5 @@ export function useFacialRecognition(
     startVerification,
     stopCamera,
     initializeCamera,
-  }
+  };
 }
