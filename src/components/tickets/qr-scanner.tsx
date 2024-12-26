@@ -88,10 +88,18 @@ export function QrScanner({ onScan }: QrScannerProps) {
       
       #leitor__scan_region video {
         max-height: 300px !important;
+        width: 100% !important;
         object-fit: cover !important;
         border-radius: 8px !important;
         background: transparent !important;
-        transform: scaleX(-1);
+      }
+      
+      @media (max-width: 768px) {
+        #leitor__scan_region video {
+          max-height: none !important;
+          height: auto !important;
+          aspect-ratio: 1 !important;
+        }
       }
       
       #leitor__camera_selection,
@@ -147,6 +155,20 @@ export function QrScanner({ onScan }: QrScannerProps) {
         border: 2px solid hsl(var(--primary));
         border-radius: 8px;
         pointer-events: none;
+      }
+
+      #error-log {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 1rem;
+        font-family: monospace;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 9999;
       }
 
       .camera-select {
@@ -228,13 +250,25 @@ export function QrScanner({ onScan }: QrScannerProps) {
     [onScan, state.scanner],
   );
 
-  const handleScanFailure = useCallback((error: string) => {
-    if (
-      !error.includes("No MultiFormat Readers were able to detect the code")
-    ) {
-      console.warn(error);
+  const logError = useCallback((error: string) => {
+    const errorLog = document.getElementById("error-log");
+    if (errorLog) {
+      const timestamp = new Date().toLocaleTimeString();
+      errorLog.innerHTML += `[${timestamp}] ${error}<br>`;
+      errorLog.scrollTop = errorLog.scrollHeight;
     }
   }, []);
+
+  const handleScanFailure = useCallback(
+    (error: string) => {
+      if (
+        !error.includes("No MultiFormat Readers were able to detect the code")
+      ) {
+        logError(error);
+      }
+    },
+    [logError],
+  );
 
   const startScanning = useCallback(() => {
     if (state.scanner) {
@@ -269,6 +303,7 @@ export function QrScanner({ onScan }: QrScannerProps) {
 
   return (
     <div className="flex flex-col items-center gap-2">
+      <div id="error-log"></div>
       <QrCode className="mb-2 h-8 w-8 text-primary" />
       <h2 className="mb-4 text-center text-lg font-semibold text-foreground">
         {state.isScanning
