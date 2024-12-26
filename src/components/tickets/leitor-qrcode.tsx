@@ -25,6 +25,12 @@ const LeitorQRCode = () => {
     setError(err.message);
   };
 
+  const constraints = {
+    facingMode: {
+      exact: "environment",
+    },
+  };
+
   return (
     <Card className="mx-auto w-full max-w-md">
       <CardHeader>
@@ -38,7 +44,7 @@ const LeitorQRCode = () => {
               onError={handleError}
               onScan={handleScan}
               style={{ width: "100%", height: "100%" }}
-              facingMode="rear"
+              constraints={constraints}
             />
           </div>
 
