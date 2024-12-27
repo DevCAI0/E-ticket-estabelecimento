@@ -56,7 +56,6 @@ export function QrScanner({ onScan }: QrScannerProps) {
         padding: 0 !important;
       }
       
-      /* Remove elementos desnecessários */
       #leitor__dashboard_section_swaplink,
       #leitor__dashboard_section_fileselection,
       #leitor__header_message,
@@ -74,15 +73,11 @@ export function QrScanner({ onScan }: QrScannerProps) {
       #leitor__scan_region {
         padding: 0 !important;
         background: transparent !important;
-        display: none; /* Hide initially */
+        display: none;
       }
       
       #leitor__scan_region.scanning {
-        display: block; /* Show when scanning */
-      }
-      
-      #leitor__scan_region > img {
-        display: none !important;
+        display: block;
       }
       
       #leitor__scan_region video {
@@ -90,11 +85,6 @@ export function QrScanner({ onScan }: QrScannerProps) {
         object-fit: cover !important;
         border-radius: 8px !important;
         background: transparent !important;
-      }
-      
-      #leitor__camera_selection,
-      #leitor__camera_permission {
-        display: none !important;
       }
       
       #leitor__dashboard {
@@ -107,7 +97,6 @@ export function QrScanner({ onScan }: QrScannerProps) {
         padding: 0 !important;
       }
 
-      /* Adiciona uma guia de alinhamento */
       #leitor__scan_region::after {
         content: '';
         position: absolute;
