@@ -2,7 +2,6 @@ import { useEffect, useCallback, useReducer } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { QrCode } from "lucide-react";
 import { showErrorToast, showSuccessToast } from "@/components/ui/sonner";
-import { Button } from "@/components/ui/button";
 
 interface QrScannerProps {
   onScan: (result: string) => void;
@@ -49,54 +48,6 @@ export function QrScanner({ onScan }: QrScannerProps) {
     scanner: null,
   });
 
-  const handleStop = useCallback(() => {
-    if (state.scanner) {
-      state.scanner.clear();
-      dispatch({ type: "STOP_SCANNING" });
-
-      const scanRegion = document.querySelector("#leitor__scan_region");
-      if (scanRegion) {
-        scanRegion.classList.remove("scanning");
-      }
-      showSuccessToast("Escaneamento parado.");
-    }
-  }, [state.scanner]);
-
-  const handleScanSuccess = useCallback(
-    (text: string) => {
-      try {
-        onScan(text);
-        handleStop();
-        showSuccessToast("QR Code lido com sucesso!");
-      } catch (error) {
-        console.error("Erro ao processar QR Code:", error);
-        showErrorToast("Erro ao processar QR Code.");
-      }
-    },
-    [onScan, handleStop],
-  );
-
-  const handleScanFailure = useCallback((error: string) => {
-    if (
-      !error.includes("No MultiFormat Readers were able to detect the code")
-    ) {
-      console.warn(error);
-    }
-  }, []);
-
-  const handleStart = useCallback(() => {
-    if (state.scanner) {
-      state.scanner.render(handleScanSuccess, handleScanFailure);
-      dispatch({ type: "START_SCANNING" });
-
-      const scanRegion = document.querySelector("#leitor__scan_region");
-      if (scanRegion) {
-        scanRegion.classList.add("scanning");
-      }
-      showSuccessToast("Iniciando escaneamento...");
-    }
-  }, [state.scanner, handleScanSuccess, handleScanFailure]);
-
   const customizeInterface = useCallback(() => {
     const style = document.createElement("style");
     style.textContent = `
@@ -109,26 +60,14 @@ export function QrScanner({ onScan }: QrScannerProps) {
       #leitor__dashboard_section_fileselection,
       #leitor__header_message,
       #leitor__status_span,
-      #html5-qrcode-anchor-scan-type-change,
-      #html5-qrcode-button-camera-stop,
-      #html5-qrcode-button-camera-start,
-      #html5-qrcode-private-filescan-input,
-      #html5-qrcode-button-file-selection,
+      #leitor__camera_permission_button,
+      img[alt="Info icon"],
+      a[rel="noopener noreferrer"],
       #leitor select,
       #leitor__scan_region_label,
       #leitor__filescan_input,
-      svg[role="button"],
-      img[alt="Info icon"],
-      img[alt="Camera based scan"],
-      div[style*="Request Camera Permissions"],
-      a[rel="noopener noreferrer"] {
+      #html5-qrcode-anchor-scan-type-change {
         display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        width: 0 !important;
-        height: 0 !important;
-        position: absolute !important;
-        pointer-events: none !important;
       }
       
       #leitor__scan_region {
@@ -157,7 +96,7 @@ export function QrScanner({ onScan }: QrScannerProps) {
         margin: 0 !important;
         padding: 0 !important;
       }
-  
+
       #leitor__scan_region::after {
         content: '';
         position: absolute;
@@ -172,48 +111,6 @@ export function QrScanner({ onScan }: QrScannerProps) {
       }
     `;
     document.head.appendChild(style);
-
-    // Remover elementos indesejados dinamicamente
-    const elementsToRemove = [
-      "#html5-qrcode-button-file-selection",
-      "#html5-qrcode-private-filescan-input",
-      "div[style*='Request Camera Permissions']",
-      "img[alt='Info icon']",
-      "img[alt='Camera based scan']",
-    ];
-
-    elementsToRemove.forEach((selector) => {
-      const element = document.querySelector(selector);
-      if (element) {
-        element.remove();
-      }
-    });
-
-    // Alterar texto do botão de permissão
-    const updateCameraPermissionButtonText = () => {
-      const cameraPermissionButton = document.querySelector(
-        "#html5-qrcode-button-camera-permission",
-      );
-      if (cameraPermissionButton) {
-        cameraPermissionButton.textContent = "Solicitar Permissão da Câmera";
-      }
-    };
-
-    // Usar um MutationObserver para observar mudanças no DOM e alterar o texto
-    const observer = new MutationObserver(() => {
-      updateCameraPermissionButtonText();
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-
-    // Garantir que o texto seja alterado ao inicializar
-    updateCameraPermissionButtonText();
-
-    // Desconectar o observer ao desmontar
-    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -223,8 +120,6 @@ export function QrScanner({ onScan }: QrScannerProps) {
       aspectRatio: 1.0,
       rememberLastUsedCamera: true,
       focusMode: "continuous" as const,
-      showTorchButtonIfSupported: false,
-      hideMainScannerOnSuccess: true,
       videoConstraints: {
         facingMode: "environment",
         width: { min: 640, ideal: 720, max: 1920 },
@@ -243,6 +138,54 @@ export function QrScanner({ onScan }: QrScannerProps) {
     };
   }, [customizeInterface]);
 
+  const handleScanSuccess = useCallback(
+    (text: string) => {
+      try {
+        onScan(text);
+        stopScanning();
+        showSuccessToast("QR Code lido com sucesso!");
+      } catch (error) {
+        console.error("Erro ao processar QR Code:", error);
+        showErrorToast("Erro ao processar QR Code.");
+      }
+    },
+    [onScan],
+  );
+
+  const handleScanFailure = useCallback((error: string) => {
+    if (
+      !error.includes("No MultiFormat Readers were able to detect the code")
+    ) {
+      console.warn(error);
+    }
+  }, []);
+
+  const startScanning = useCallback(() => {
+    if (state.scanner) {
+      state.scanner.render(handleScanSuccess, handleScanFailure);
+      dispatch({ type: "START_SCANNING" });
+
+      const scanRegion = document.querySelector("#leitor__scan_region");
+      if (scanRegion) {
+        scanRegion.classList.add("scanning");
+      }
+      showSuccessToast("Iniciando escaneamento...");
+    }
+  }, [state.scanner, handleScanSuccess, handleScanFailure]);
+
+  const stopScanning = useCallback(() => {
+    if (state.scanner) {
+      state.scanner.clear();
+      dispatch({ type: "STOP_SCANNING" });
+
+      const scanRegion = document.querySelector("#leitor__scan_region");
+      if (scanRegion) {
+        scanRegion.classList.remove("scanning");
+      }
+      showSuccessToast("Escaneamento parado.");
+    }
+  }, [state.scanner]);
+
   return (
     <div className="flex flex-col items-center gap-2">
       <QrCode className="mb-2 h-8 w-8 text-primary" />
@@ -252,13 +195,16 @@ export function QrScanner({ onScan }: QrScannerProps) {
           : "Clique para iniciar a leitura"}
       </h2>
       <div id="leitor" className="w-full" />
-      <Button
-        onClick={state.isScanning ? handleStop : handleStart}
-        variant={state.isScanning ? "destructive" : "default"}
-        className="mt-4 w-full max-w-[200px]"
+      <button
+        onClick={state.isScanning ? stopScanning : startScanning}
+        className={`rounded-lg px-6 py-2 font-semibold transition ${
+          state.isScanning
+            ? "bg-red-600 hover:bg-red-700"
+            : "bg-blue-600 hover:bg-blue-700"
+        } mt-4 w-full max-w-[200px] text-white`}
       >
-        {state.isScanning ? "Parar" : "Iniciar Escaneamento"}
-      </Button>
+        {state.isScanning ? "Parar Escaneamento" : "Iniciar Escaneamento"}
+      </button>
     </div>
   );
 }
