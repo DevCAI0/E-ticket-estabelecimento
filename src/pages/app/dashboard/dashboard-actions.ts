@@ -27,7 +27,7 @@ export const dashboardActions: DashboardAction[] = [
   },
   {
     icon: Search,
-    title: "Verificar Manualmente",
+    title: "Manualmente",
     color: "--chart-2",
     path: "/manual-check",
     description: "Verificação manual de tickets",

@@ -19,18 +19,18 @@ export const ActionCard = ({
   return (
     <Link to={path}>
       <Card className="cursor-pointer border-border transition-colors hover:bg-accent">
-        <CardContent className="flex aspect-square flex-col items-center justify-center p-6">
+        <CardContent className="flex aspect-square flex-col items-center justify-center p-4">
           <div
-            className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border"
+            className="mb-2 flex h-8 w-8 items-center justify-center rounded-full border"
             style={{ borderColor: `hsl(var(${color}))` }}
           >
             <Icon
-              className="h-5 w-5"
+              className="h-4 w-4"
               style={{ color: `hsl(var(${color}))` }}
               strokeWidth={1.5}
             />
           </div>
-          <h3 className="mb-1 font-medium">{title}</h3>
+          <h3 className="text-sm font-medium">{title}</h3>
         </CardContent>
       </Card>
     </Link>

@@ -109,17 +109,29 @@ export function useFacialRecognition(
         return;
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const constraints = {
         video: {
-          facingMode: "environment",
+          facingMode: { exact: "environment" },
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
-      });
+      };
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await startPositionDetection();
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await startPositionDetection();
+        }
+      } catch {
+        // Fallback para qualquer câmera se a traseira falhar
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await startPositionDetection();
+        }
       }
     } catch (error) {
       console.error("Erro ao inicializar câmera:", error);
