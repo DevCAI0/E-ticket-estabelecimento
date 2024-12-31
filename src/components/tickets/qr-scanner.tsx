@@ -2,9 +2,10 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { X, Image, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { showErrorToast, showSuccessToast } from "@/components/ui/sonner";
+
 interface QrScannerProps {
   onScan: (qrCode: string) => void;
 }
@@ -20,8 +21,6 @@ const qrConfig = {
 };
 
 const QrScanner = ({ onScan }: QrScannerProps) => {
-  const [result, setResult] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [isFrontCamera, setIsFrontCamera] = useState<boolean>(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -68,18 +67,17 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
 
   const handleScanSuccess = useCallback(
     (decodedText: string) => {
-      setResult(decodedText);
       if (navigator.vibrate) {
         navigator.vibrate(200);
       }
-      onScan(decodedText); // Chama a função recebida via props
+      onScan(decodedText);
     },
     [onScan],
   );
 
   const startScanning = async () => {
     if (!scannerRef.current) {
-      setErrorMessage("Aguarde a inicialização do scanner...");
+      showErrorToast("Aguarde a inicialização do scanner...");
       return;
     }
 
@@ -99,7 +97,6 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
         () => {}, // Ignore errors durante o scanning
       );
       setIsScanning(true);
-      setErrorMessage(null);
     } catch (err) {
       console.error("Erro ao iniciar scanner:", err);
       // Se falhar com 'exact: environment', tenta sem exact
@@ -119,13 +116,12 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
             () => {},
           );
           setIsScanning(true);
-          setErrorMessage(null);
           return;
         } catch (fallbackErr) {
           console.error("Erro ao tentar fallback:", fallbackErr);
         }
       }
-      setErrorMessage("Erro ao acessar a câmera. Verifique as permissões.");
+      showErrorToast("Erro ao acessar a câmera. Verifique as permissões.");
     }
   };
 
@@ -144,16 +140,18 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
   };
 
   const handleCameraSwitch = async (checked: boolean) => {
+    // Se estiver escaneando, não permite a troca
+    if (isScanning) {
+      showErrorToast("Pare o scanner antes de trocar a câmera");
+      return;
+    }
+
     try {
       await stopScanning();
       setIsFrontCamera(checked);
-      if (isScanning) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        await startScanning();
-      }
     } catch (err) {
       console.error("Erro ao trocar câmera:", err);
-      setErrorMessage("Erro ao trocar de câmera. Tente novamente.");
+      showErrorToast("Erro ao trocar de câmera. Tente novamente.");
     }
   };
 
@@ -162,19 +160,29 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
     if (!file || !scannerRef.current) return;
 
     try {
-      setErrorMessage("Processando imagem...");
-      const result = await scannerRef.current.scanFile(file, true);
-      setResult(result);
-      setErrorMessage(null);
-    } catch (err) {
-      setErrorMessage("Erro ao processar imagem. Tente novamente.");
+      showSuccessToast("Processando imagem...");
+      const decodedText = await scannerRef.current.scanFile(file, true);
+      onScan(decodedText);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro desconhecido";
+
+      if (
+        errorMessage.includes(
+          "No MultiFormat Readers were able to detect the code",
+        )
+      ) {
+        showErrorToast(
+          "Nenhum QR code encontrado na imagem. Tente outra imagem ou use a câmera.",
+        );
+      } else {
+        showErrorToast("Erro ao processar imagem. Tente novamente.");
+      }
     }
   };
 
   const resetScanner = async () => {
     await stopScanning();
-    setResult("");
-    setErrorMessage(null);
   };
 
   const toggleScanner = async () => {
@@ -186,14 +194,15 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
       }
     } catch (err) {
       console.error("Erro ao alternar scanner:", err);
-      setErrorMessage("Erro ao alternar o scanner. Tente novamente.");
+      showErrorToast("Erro ao alternar o scanner. Tente novamente.");
     }
   };
 
   return (
-    <div className="fixed inset-0 mt-32 flex h-[80vh] flex-col bg-black/95">
+    <div className="flex h-full flex-col bg-black/95">
       {/* Header */}
-      <div className="safe-area-top flex items-center justify-between p-4">
+      <div className="flex items-center justify-between p-4">
+        {/* Botão Voltar/Parar */}
         <Button
           variant="ghost"
           size="icon"
@@ -212,20 +221,11 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
             id="camera-switch"
             checked={isFrontCamera}
             onCheckedChange={handleCameraSwitch}
+            disabled={isScanning} // Desabilita durante o scanning
           />
         </div>
       </div>
-      {/* Error Alert */}
-      {errorMessage && (
-        <div className="absolute left-4 right-4 top-16 z-50">
-          <Alert
-            variant="destructive"
-            className="border-red-500/20 bg-red-500/10 text-white"
-          >
-            <AlertDescription>{errorMessage}</AlertDescription>
-          </Alert>
-        </div>
-      )}
+
       {/* Scanner Area */}
       <div className="flex flex-1 flex-col items-center justify-center px-4">
         <div className="relative aspect-square w-full max-w-[280px]">
@@ -235,7 +235,7 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
           <div className="absolute bottom-0 left-0 z-10 h-8 w-8 rounded-bl-lg border-b-2 border-l-2 border-white" />
           <div className="absolute bottom-0 right-0 z-10 h-8 w-8 rounded-br-lg border-b-2 border-r-2 border-white" />
 
-          {/* QR Scanner - Sempre presente mas oculto quando não estiver escaneando */}
+          {/* QR Scanner */}
           <div
             id="qr-reader"
             className={`h-full w-full overflow-hidden rounded-lg bg-black ${
@@ -243,7 +243,7 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
             }`}
           />
 
-          {/* Botão de iniciar - Mostrado apenas quando não estiver escaneando */}
+          {/* Botão de iniciar */}
           {!isScanning && (
             <div className="absolute inset-0 flex items-center justify-center">
               <Button
@@ -262,8 +262,9 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
             : "Clique para iniciar o scanner"}
         </p>
       </div>
+
       {/* Bottom Action */}
-      <div className="safe-area-bottom">
+      <div className="p-4">
         <input
           type="file"
           accept="image/*"
@@ -273,35 +274,13 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
         />
         <Button
           variant="ghost"
-          className="flex w-full items-center justify-center gap-2 rounded-none py-6 text-white hover:bg-white/10"
+          className="flex w-full items-center justify-center gap-2 rounded-lg py-4 text-white hover:bg-white/10"
           onClick={() => document.getElementById("file-input")?.click()}
         >
           <Image className="h-5 w-5" />
           <span>Escolher da galeria</span>
         </Button>
       </div>
-      {/* Result Modal */}
-
-      {result && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4">
-          <div className="w-full max-w-sm rounded-lg bg-white p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold">QR Code detectado</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setResult("");
-                  setErrorMessage(null);
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <p className="break-all rounded-md bg-gray-100 p-3">{result}</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

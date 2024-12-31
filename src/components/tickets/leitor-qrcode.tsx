@@ -21,7 +21,6 @@ export function LeitorQRCode() {
   const [resultado, setResultado] = useState<ResultadoLeitura | null>(null);
   const ticketService = useTicketService();
   const { addTicket } = usePendingTickets();
-
   const { user } = useAuth();
 
   const handleScan = async (qrCode: string) => {
@@ -37,7 +36,6 @@ export function LeitorQRCode() {
 
     try {
       const response = await ticketService.lerQRCode(qrCode);
-      // Adiciona o ticket à lista de pendentes
       if (response.ticket) {
         addTicket(response.ticket);
       }
@@ -75,8 +73,8 @@ export function LeitorQRCode() {
   // Verifica permissão do usuário
   if (!user?.id_restaurante) {
     return (
-      <div className="flex flex-col items-center gap-4 p-4">
-        <Card className="w-full max-w-md border border-border bg-card">
+      <div className="mx-auto w-full max-w-md px-4">
+        <Card className="overflow-hidden">
           <CardContent className="p-6">
             <Alert variant="destructive">
               <AlertCircle className="h-5 w-5" />
@@ -92,15 +90,7 @@ export function LeitorQRCode() {
     );
   }
 
-  const renderContent = () => {
-    if (lendo) {
-      return (
-        <div className="fixed inset-0 z-50">
-          <QrScanner onScan={handleScan} />
-        </div>
-      );
-    }
-
+  const renderResultado = () => {
     if (!resultado) return null;
 
     return (
@@ -131,7 +121,6 @@ export function LeitorQRCode() {
           />
         )}
 
-        {/* Botão sempre visível após a leitura */}
         <button
           onClick={handleNovoPedido}
           className="w-full rounded-md bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
@@ -145,9 +134,17 @@ export function LeitorQRCode() {
   };
 
   return (
-    <div className="relative flex h-full w-full flex-col items-center">
-      <Card className="w-full max-w-md border border-border bg-card">
-        <CardContent className="p-0">{renderContent()}</CardContent>
+    <div className="mx-auto w-full max-w-md px-4">
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          {lendo ? (
+            <div className="h-[600px]">
+              <QrScanner onScan={handleScan} />
+            </div>
+          ) : (
+            <div className="space-y-4 p-6">{renderResultado()}</div>
+          )}
+        </CardContent>
       </Card>
     </div>
   );
