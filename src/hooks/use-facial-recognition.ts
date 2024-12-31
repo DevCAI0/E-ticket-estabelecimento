@@ -34,29 +34,29 @@ export const useFacialRecognition = ({
   const videoRef = useRef<HTMLVideoElement>(null); // Adicionar esta linha
   const streamRef = useRef<MediaStream | null>(null);
 
-  const checkCameraAvailability = async (
-    facingMode: string,
-  ): Promise<boolean> => {
-    try {
-      // Primeiro tenta com exact
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: facingMode } },
-        });
-        stream.getTracks().forEach((track) => track.stop());
-        return true;
-      } catch {
-        // Se falhar com exact, tenta sem exact
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode },
-        });
-        fallbackStream.getTracks().forEach((track) => track.stop());
-        return true;
-      }
-    } catch {
-      return false;
-    }
-  };
+  // const checkCameraAvailability = async (
+  //   facingMode: string,
+  // ): Promise<boolean> => {
+  //   try {
+  //     // Primeiro tenta com exact
+  //     try {
+  //       const stream = await navigator.mediaDevices.getUserMedia({
+  //         video: { facingMode: { exact: facingMode } },
+  //       });
+  //       stream.getTracks().forEach((track) => track.stop());
+  //       return true;
+  //     } catch {
+  //       // Se falhar com exact, tenta sem exact
+  //       const fallbackStream = await navigator.mediaDevices.getUserMedia({
+  //         video: { facingMode },
+  //       });
+  //       fallbackStream.getTracks().forEach((track) => track.stop());
+  //       return true;
+  //     }
+  //   } catch {
+  //     return false;
+  //   }
+  // };
   const startCamera = useCallback(async () => {
     try {
       console.log(
@@ -64,14 +64,31 @@ export const useFacialRecognition = ({
         isFrontCamera ? "frontal" : "traseira",
       );
 
-      // Primeira tentativa com exact para garantir a câmera correta
+      // Tenta obter a lista de câmeras disponíveis
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter((device) => device.kind === "videoinput");
+
+      // Se não houver câmeras, lança erro
+      if (cameras.length === 0) {
+        throw new Error("Nenhuma câmera encontrada no dispositivo");
+      }
+
+      // Se só tem uma câmera, usa ela independente da seleção
+      if (cameras.length === 1) {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          streamRef.current = stream;
+        }
+        return;
+      }
+
+      // Se tem mais de uma câmera, tenta usar a selecionada
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: {
-            exact: isFrontCamera ? "user" : "environment",
-          },
-          width: { min: 640, ideal: 1280, max: 1920 },
-          height: { min: 480, ideal: 720, max: 1080 },
+          facingMode: isFrontCamera ? "user" : "environment",
         },
       });
 
@@ -81,73 +98,49 @@ export const useFacialRecognition = ({
         console.log("✅ Câmera iniciada com sucesso!");
       }
     } catch (err) {
-      if (!isFrontCamera) {
-        // Se falhou tentando usar a câmera traseira, não tentamos fallback
-        // Em vez disso, informamos que a câmera traseira não está disponível
-        console.error("❌ Câmera traseira não disponível:", err);
-        throw new Error("Câmera traseira não disponível neste dispositivo");
-      }
-
-      // Para câmera frontal, podemos tentar um fallback
-      try {
-        console.log("Tentando fallback para câmera frontal...");
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "user",
-            width: { min: 640, ideal: 1280, max: 1920 },
-            height: { min: 480, ideal: 720, max: 1080 },
-          },
-        });
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = fallbackStream;
-          streamRef.current = fallbackStream;
-          console.log("✅ Câmera frontal iniciada com sucesso (fallback)!");
-        }
-      } catch (fallbackErr) {
-        console.error("❌ Erro ao iniciar câmera (fallback):", fallbackErr);
-        throw new Error(
-          "Não foi possível acessar nenhuma câmera. Verifique as permissões.",
-        );
-      }
+      console.error("❌ Erro ao iniciar câmera:", err);
+      throw new Error("Não foi possível acessar a câmera selecionada");
     }
   }, [isFrontCamera]);
 
   const handleCameraSwitch = async (checked: boolean) => {
     try {
+      // Para a câmera atual
       await stopCamera();
 
-      // Verifica disponibilidade antes de tentar trocar
-      const isCameraAvailable = await checkCameraAvailability(
-        checked ? "user" : "environment",
-      );
-
-      if (!isCameraAvailable) {
-        throw new Error(
-          `A câmera ${checked ? "frontal" : "traseira"} não está disponível neste dispositivo.`,
-        );
-      }
-
-      setIsFrontCamera(checked);
+      // Aguarda um momento para garantir que a câmera anterior foi fechada
       await new Promise((resolve) => setTimeout(resolve, 500));
 
+      // Atualiza o estado
+      setIsFrontCamera(checked);
+
+      // Aguarda mais um momento antes de iniciar a nova câmera
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Tenta iniciar a nova câmera
+      await startCamera();
+    } catch (error) {
+      // Em caso de erro, tenta reverter para a câmera anterior
+      setIsFrontCamera(!checked);
+      await new Promise((resolve) => setTimeout(resolve, 500));
       try {
         await startCamera();
-      } catch (error) {
-        // Se falhou ao iniciar a nova câmera, volta para a anterior
-        setIsFrontCamera(!checked);
-        throw error; // Propaga o erro para mostrar ao usuário
+      } catch {
+        onError?.(
+          new Error(
+            "Erro ao acessar as câmeras. Por favor, recarregue a página.",
+          ),
+        );
       }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Erro ao trocar câmera";
-      onError?.(new Error(message));
     }
   };
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current.getTracks().forEach((track) => {
+        track.stop();
+        track.enabled = false;
+      });
       streamRef.current = null;
     }
     if (videoRef.current) {
