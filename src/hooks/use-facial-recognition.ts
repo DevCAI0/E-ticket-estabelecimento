@@ -64,33 +64,38 @@ export const useFacialRecognition = ({
         isFrontCamera ? "frontal" : "traseira",
       );
 
-      // Tenta obter a lista de câmeras disponíveis
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const cameras = devices.filter((device) => device.kind === "videoinput");
-
-      // Se não houver câmeras, lança erro
-      if (cameras.length === 0) {
-        throw new Error("Nenhuma câmera encontrada no dispositivo");
+      let constraints;
+      if (isFrontCamera) {
+        constraints = {
+          video: {
+            facingMode: "user",
+            width: { min: 640, ideal: 1280, max: 1920 },
+            height: { min: 480, ideal: 720, max: 1080 },
+          },
+        };
+      } else {
+        constraints = {
+          video: {
+            facingMode: "environment",
+            width: { min: 640, ideal: 1280, max: 1920 },
+            height: { min: 480, ideal: 720, max: 1080 },
+          },
+        };
       }
 
-      // Se só tem uma câmera, usa ela independente da seleção
-      if (cameras.length === 1) {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+      // Primeiro para qualquer stream existente
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => {
+          track.stop();
+          track.enabled = false;
         });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          streamRef.current = stream;
-        }
-        return;
+        streamRef.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
       }
 
-      // Se tem mais de uma câmera, tenta usar a selecionada
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: isFrontCamera ? "user" : "environment",
-        },
-      });
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -99,45 +104,46 @@ export const useFacialRecognition = ({
       }
     } catch (err) {
       console.error("❌ Erro ao iniciar câmera:", err);
-      throw new Error("Não foi possível acessar a câmera selecionada");
+      onError?.(
+        new Error(
+          `Não foi possível acessar a câmera ${isFrontCamera ? "frontal" : "traseira"}`,
+        ),
+      );
     }
-  }, [isFrontCamera]);
+  }, [isFrontCamera, onError]);
 
   const handleCameraSwitch = async (checked: boolean) => {
     try {
       // Para a câmera atual
       await stopCamera();
 
-      // Aguarda um momento para garantir que a câmera anterior foi fechada
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
       // Atualiza o estado
       setIsFrontCamera(checked);
 
-      // Aguarda mais um momento antes de iniciar a nova câmera
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Aguarda um momento antes de iniciar a nova câmera
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Tenta iniciar a nova câmera
       await startCamera();
     } catch (error) {
-      // Em caso de erro, tenta reverter para a câmera anterior
+      // Reverte para o estado anterior em caso de erro
+      console.error("Erro ao trocar câmera:", error);
       setIsFrontCamera(!checked);
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      try {
-        await startCamera();
-      } catch {
-        onError?.(
-          new Error(
-            "Erro ao acessar as câmeras. Por favor, recarregue a página.",
-          ),
-        );
-      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await startCamera();
+      onError?.(
+        new Error(
+          `Não foi possível alternar para a câmera ${checked ? "frontal" : "traseira"}`,
+        ),
+      );
     }
   };
 
   const stopCamera = useCallback(() => {
+    console.log("Parando câmera...");
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => {
+      const tracks = streamRef.current.getTracks();
+      tracks.forEach((track) => {
         track.stop();
         track.enabled = false;
       });
