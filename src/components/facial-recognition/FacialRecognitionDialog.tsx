@@ -16,6 +16,7 @@ import { toast } from "@/hooks/use-toast";
 import { useFacialRecognition } from "@/hooks/use-facial-recognition";
 import { VerificationResult } from "@/types/face-recognition";
 import { cn } from "@/lib/utils";
+import { Label } from "../ui/label";
 
 interface Props {
   open: boolean;
@@ -172,6 +173,8 @@ const FacialRecognitionDialog = ({
     captureAndVerify,
     startCamera,
     stopCamera,
+    isFrontCamera,
+    handleCameraSwitch,
   } = useFacialRecognition({
     onSuccess: handleSuccess,
     onError: handleError,
@@ -442,31 +445,41 @@ const FacialRecognitionDialog = ({
   );
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(isOpen) => {
-        if (!isOpen) handleClose();
-      }}
-    >
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent className="max-h-[90vh] w-[95vw] overflow-y-auto p-0 sm:max-w-[700px]">
         <div className="flex items-center justify-between p-4 pb-0 sm:p-6">
           <DialogTitle className="text-lg font-semibold sm:text-xl">
-            {!isVerifying && step === "INITIAL" && "Verificação Facial"}
-            {!isVerifying && step === "COMPARING" && "Capturando Fotos"}
-            {isVerifying && "Processando Verificação"}
-            {step === "SUCCESS" && "Verificação Concluída"}
-            {step === "FAILED" && "Verificação Falhou"}
+            {/* ... títulos ... */}
           </DialogTitle>
 
-          <div className="mr-10 flex items-center">
-            <span className="hidden text-xs text-muted-foreground sm:inline">
-              Logs
-            </span>
-            <Switch
-              checked={showLogs}
-              onCheckedChange={setShowLogs}
-              className="data-[state=checked]:bg-primary"
-            />
+          <div className="flex items-center gap-4">
+            {/* Switch de câmera */}
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="camera-switch"
+                className="text-sm text-muted-foreground"
+              >
+                {isFrontCamera ? "Câmera Frontal" : "Câmera Traseira"}
+              </Label>
+              <Switch
+                id="camera-switch"
+                checked={isFrontCamera}
+                onCheckedChange={handleCameraSwitch}
+                disabled={isScanning || isVerifying}
+              />
+            </div>
+
+            {/* Switch de logs */}
+            <div className="flex items-center">
+              <span className="hidden text-xs text-muted-foreground sm:inline">
+                Logs
+              </span>
+              <Switch
+                checked={showLogs}
+                onCheckedChange={setShowLogs}
+                className="data-[state=checked]:bg-primary"
+              />
+            </div>
           </div>
         </div>
 

@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { useTicketService } from "@/services/ticket-service";
-import { QrScanner } from "./qr-scanner";
+import QrScanner from "./qr-scanner";
 import { TicketDetails } from "./ticket-details";
 import { Ticket } from "@/types/ticket";
 import { useAuth } from "@/hooks/useAuth";
@@ -94,7 +94,11 @@ export function LeitorQRCode() {
 
   const renderContent = () => {
     if (lendo) {
-      return <QrScanner onScan={handleScan} />;
+      return (
+        <div className="fixed inset-0 z-50">
+          <QrScanner onScan={handleScan} />
+        </div>
+      );
     }
 
     if (!resultado) return null;
@@ -141,9 +145,9 @@ export function LeitorQRCode() {
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4">
+    <div className="relative flex h-full w-full flex-col items-center">
       <Card className="w-full max-w-md border border-border bg-card">
-        <CardContent className="p-6">{renderContent()}</CardContent>
+        <CardContent className="p-0">{renderContent()}</CardContent>
       </Card>
     </div>
   );

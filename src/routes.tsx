@@ -6,7 +6,7 @@ import Home from "./pages/app/dashboard/dashboard";
 import SignIn from "./pages/auth/sign-in";
 import { AuthGuard, GuestGuard } from "./components/route-guards/AuthGuards";
 import { Ajustes } from "./pages/app/ajustes";
-import PaginaLeituraTickets from "./pages/app/tickets/leitura-tickets";
+import { PaginaLeituraTickets } from "./pages/app/tickets/leitura-tickets";
 import AprovarTickets from "./pages/app/tickets/aprovar-tickets";
 import VerificacaoManualPage from "./pages/app/tickets/verificacao-manual";
 import NotFound from "./pages/app/404";

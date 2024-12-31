@@ -6,7 +6,7 @@ import { faceRecognitionService } from "../services/face-recognition-service";
 interface UseFacialRecognitionProps {
   onSuccess?: (result: VerificationResult) => void;
   onError?: (error: Error) => void;
-  funcionarioId: number; // Adicionado
+  funcionarioId: number;
 }
 
 interface UseFacialRecognitionReturn {
@@ -18,6 +18,8 @@ interface UseFacialRecognitionReturn {
   captureAndVerify: (photos: string[]) => Promise<void>;
   startCamera: () => Promise<void>;
   stopCamera: () => void;
+  isFrontCamera: boolean;
+  handleCameraSwitch: (checked: boolean) => Promise<void>;
 }
 
 export const useFacialRecognition = ({
@@ -28,15 +30,37 @@ export const useFacialRecognition = ({
   const [step, setStep] = useState<VerificationStep>("INITIAL");
   const [progress, setProgress] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isFrontCamera, setIsFrontCamera] = useState<boolean>(true); // Novo estado
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const checkCameraAvailability = async (
+    facingMode: string,
+  ): Promise<boolean> => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(
+        (device) => device.kind === "videoinput",
+      );
+
+      if (videoDevices.length === 1) return true;
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: facingMode } },
+      });
+
+      stream.getTracks().forEach((track) => track.stop());
+      return true;
+    } catch {
+      return false;
+    }
+  };
   const startCamera = useCallback(async () => {
     try {
       console.log("📸 Iniciando câmera...");
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: "user",
+          facingMode: isFrontCamera ? "user" : { exact: "environment" },
           width: { min: 640, ideal: 1280, max: 1920 },
           height: { min: 480, ideal: 720, max: 1080 },
         },
@@ -47,11 +71,54 @@ export const useFacialRecognition = ({
         streamRef.current = stream;
         console.log("✅ Câmera iniciada com sucesso!");
       }
-    } catch (error) {
-      console.error("❌ Erro ao iniciar câmera:", error);
-      onError?.(error as Error);
+    } catch (err) {
+      // Se falhar com exact environment, tenta sem exact
+      if (!isFrontCamera) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "environment",
+              width: { min: 640, ideal: 1280, max: 1920 },
+              height: { min: 480, ideal: 720, max: 1080 },
+            },
+          });
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            streamRef.current = stream;
+            console.log("✅ Câmera iniciada com sucesso (fallback)!");
+          }
+          return;
+        } catch (fallbackErr) {
+          console.error("❌ Erro no fallback da câmera:", fallbackErr);
+        }
+      }
+      console.error("❌ Erro ao iniciar câmera:", err);
+      onError?.(err as Error);
     }
-  }, [onError]);
+  }, [isFrontCamera, onError]);
+
+  const handleCameraSwitch = async (checked: boolean) => {
+    try {
+      // Verifica se a câmera desejada está disponível
+      const isCameraAvailable = await checkCameraAvailability(
+        checked ? "user" : "environment",
+      );
+
+      if (!isCameraAvailable) {
+        throw new Error(
+          `A câmera ${checked ? "frontal" : "traseira"} não está disponível neste dispositivo.`,
+        );
+      }
+
+      await stopCamera();
+      setIsFrontCamera(checked);
+      await startCamera();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Erro ao trocar câmera";
+      onError?.(new Error(message));
+    }
+  };
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -215,5 +282,7 @@ export const useFacialRecognition = ({
     captureAndVerify,
     startCamera,
     stopCamera,
+    isFrontCamera,
+    handleCameraSwitch,
   };
 };
