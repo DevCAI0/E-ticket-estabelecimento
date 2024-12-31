@@ -16,7 +16,7 @@ import { toast } from "@/hooks/use-toast";
 import { useFacialRecognition } from "@/hooks/use-facial-recognition";
 import { VerificationResult } from "@/types/face-recognition";
 import { cn } from "@/lib/utils";
-import { Label } from "../ui/label";
+// import { Label } from "../ui/label";
 
 interface Props {
   open: boolean;
@@ -173,8 +173,8 @@ const FacialRecognitionDialog = ({
     captureAndVerify,
     startCamera,
     stopCamera,
-    isFrontCamera,
-    handleCameraSwitch,
+    // isFrontCamera,
+    // handleCameraSwitch,
   } = useFacialRecognition({
     onSuccess: handleSuccess,
     onError: handleError,
@@ -453,7 +453,7 @@ const FacialRecognitionDialog = ({
           </DialogTitle>
 
           <div className="flex items-center gap-4">
-            {/* Switch de câmera */}
+            {/* Switch de câmera
             <div className="flex items-center gap-2">
               <Label
                 htmlFor="camera-switch"
@@ -467,7 +467,7 @@ const FacialRecognitionDialog = ({
                 onCheckedChange={handleCameraSwitch}
                 disabled={isScanning || isVerifying}
               />
-            </div>
+            </div> */}
 
             {/* Switch de logs */}
             <div className="flex items-center">

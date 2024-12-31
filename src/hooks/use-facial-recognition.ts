@@ -59,48 +59,51 @@ export const useFacialRecognition = ({
   // };
   const startCamera = useCallback(async () => {
     try {
-      console.log(
-        "📸 Iniciando câmera com modo:",
-        isFrontCamera ? "frontal" : "traseira",
-      );
+      const currentMode = isFrontCamera ? "frontal" : "traseira";
+      console.log(`📸 Iniciando câmera ${currentMode}...`);
 
-      let constraints;
-      if (isFrontCamera) {
-        constraints = {
-          video: {
-            facingMode: "user",
-            width: { min: 640, ideal: 1280, max: 1920 },
-            height: { min: 480, ideal: 720, max: 1080 },
-          },
-        };
-      } else {
-        constraints = {
-          video: {
-            facingMode: "environment",
-            width: { min: 640, ideal: 1280, max: 1920 },
-            height: { min: 480, ideal: 720, max: 1080 },
-          },
-        };
-      }
-
-      // Primeiro para qualquer stream existente
+      // Primeiro, para a câmera atual se estiver rodando
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => {
           track.stop();
-          track.enabled = false;
         });
         streamRef.current = null;
-      }
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      // Tenta iniciar com a câmera desejada
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: isFrontCamera ? "user" : "environment",
+            width: { min: 640, ideal: 1280, max: 1920 },
+            height: { min: 480, ideal: 720, max: 1080 },
+          },
+        });
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        console.log("✅ Câmera iniciada com sucesso!");
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          streamRef.current = stream;
+          console.log(`✅ Câmera ${currentMode} iniciada com sucesso!`);
+        }
+      } catch (initialError) {
+        // Se falhar e estiver tentando usar a câmera traseira, tenta a frontal
+        if (!isFrontCamera) {
+          throw initialError; // Propaga o erro para câmera traseira
+        }
+
+        // Para câmera frontal, tenta um fallback mais simples
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = fallbackStream;
+          streamRef.current = fallbackStream;
+          console.log("✅ Câmera iniciada com configuração básica");
+        }
       }
     } catch (err) {
       console.error("❌ Erro ao iniciar câmera:", err);
@@ -114,23 +117,36 @@ export const useFacialRecognition = ({
 
   const handleCameraSwitch = async (checked: boolean) => {
     try {
+      // Não faz nada se tentar mudar para o mesmo modo
+      if (checked === isFrontCamera) return;
+
+      console.log(
+        `🔄 Alternando para câmera ${checked ? "frontal" : "traseira"}...`,
+      );
+
       // Para a câmera atual
-      await stopCamera();
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
+      }
 
       // Atualiza o estado
       setIsFrontCamera(checked);
 
-      // Aguarda um momento antes de iniciar a nova câmera
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Aguarda para garantir que a câmera anterior foi fechada
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Tenta iniciar a nova câmera
-      await startCamera();
+      // Inicia a nova câmera
+      await startCamera().catch((error) => {
+        console.error("Erro ao trocar câmera, revertendo...", error);
+        setIsFrontCamera(!checked); // Reverte o estado
+        startCamera(); // Tenta reiniciar com a câmera anterior
+        throw error;
+      });
     } catch (error) {
-      // Reverte para o estado anterior em caso de erro
-      console.error("Erro ao trocar câmera:", error);
-      setIsFrontCamera(!checked);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      await startCamera();
       onError?.(
         new Error(
           `Não foi possível alternar para a câmera ${checked ? "frontal" : "traseira"}`,
@@ -140,12 +156,10 @@ export const useFacialRecognition = ({
   };
 
   const stopCamera = useCallback(() => {
-    console.log("Parando câmera...");
+    console.log("🛑 Parando câmera...");
     if (streamRef.current) {
-      const tracks = streamRef.current.getTracks();
-      tracks.forEach((track) => {
+      streamRef.current.getTracks().forEach((track) => {
         track.stop();
-        track.enabled = false;
       });
       streamRef.current = null;
     }
