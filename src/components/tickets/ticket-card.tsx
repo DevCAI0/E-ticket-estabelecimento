@@ -7,7 +7,7 @@ interface TicketCardProps {
   numero: number;
   funcionario: {
     nome: string;
-  };
+  } | null;
   tipo_refeicao: string;
   data_emissao: string;
   status_texto: string;
@@ -44,7 +44,7 @@ export function TicketCard({
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Funcionário</span>
               <span className="text-sm font-medium text-foreground">
-                {funcionario.nome}
+                {funcionario?.nome || "N/A"}
               </span>
             </div>
 
