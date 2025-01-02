@@ -226,7 +226,7 @@ export default function SignIn() {
               >
                 <Coffee className="h-6 w-6 text-primary" />
                 <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-2xl font-bold text-transparent">
-                  FoodPass
+                  E-ticket
                 </span>
               </motion.div>
             </div>

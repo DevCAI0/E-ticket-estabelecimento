@@ -1,4 +1,3 @@
-// src/hooks/use-pending-tickets.ts
 import { useState, useEffect } from "react";
 import { Ticket } from "@/types/ticket";
 
@@ -14,13 +13,13 @@ export function usePendingTickets() {
     const stored = localStorage.getItem("pendingTickets");
     if (stored) {
       const tickets: PendingTicket[] = JSON.parse(stored);
-      // Filtra tickets expirados
+      // Filtra tickets expirados e aprovados
       const validTickets = tickets.filter((ticket) => {
         const expirationDate = new Date(ticket.expiracao);
-        return expirationDate > new Date();
+        return expirationDate > new Date() && ticket.status !== 3;
       });
       setPendingTickets(validTickets);
-      // Atualiza localStorage se algum ticket foi removido por expiração
+      // Atualiza localStorage se algum ticket foi removido
       if (validTickets.length !== tickets.length) {
         localStorage.setItem("pendingTickets", JSON.stringify(validTickets));
       }
@@ -28,6 +27,9 @@ export function usePendingTickets() {
   }, []);
 
   const addTicket = (ticket: Ticket) => {
+    // Não adiciona tickets já aprovados
+    if (ticket.status === 3) return;
+
     setPendingTickets((current) => {
       // Verifica se o ticket já existe
       if (current.some((t) => t.id === ticket.id)) {

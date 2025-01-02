@@ -1,86 +1,125 @@
-// import { TicketCard } from "./ticket-card";
-// import { useTickets } from "@/hooks/useTickets";
-// import { AlertCircle } from "lucide-react";
-// import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { api } from "@/lib/axios";
+import { useAuth } from "@/hooks/useAuth";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TicketCard } from "./ticket-card";
+import { AnimatePresence } from "framer-motion";
+import { TicketCardSkeleton } from "./ticket-card-skeleton";
+import { isEqual } from "lodash";
 
-// interface TicketListProps {
-//   status: 'active' | 'used' | 'expired';
-// }
+interface Funcionario {
+  id_funcionario: number;
+  nome: string;
+  cpf: string;
+}
 
-// export function TicketCardSkeleton() {
-//   return (
-//     <div className="p-4 space-y-4 border rounded-lg">
-//       <div className="flex items-start justify-between">
-//         <div className="space-y-2">
-//           <div className="w-32 h-5 rounded bg-muted animate-pulse" />
-//           <div className="w-40 h-4 rounded bg-muted animate-pulse" />
-//         </div>
-//         <div className="w-20 h-6 rounded bg-muted animate-pulse" />
-//       </div>
-//       <div className="w-24 h-6 rounded bg-muted animate-pulse" />
-//     </div>
-//   );
-// }
+interface Ticket {
+  id: number;
+  numero: number;
+  funcionario: Funcionario;
+  tipo_refeicao: string;
+  status: number;
+  status_texto: string;
+  data_emissao: string;
+  expiracao: string;
+  tempo_restante: string;
+}
 
-// export function TicketList({ status }: TicketListProps) {
-//   const { tickets, useTicket, isLoading } = useTickets();
+export function TicketsList() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(5);
+  const { user } = useAuth();
+  const previousTickets = useRef<Ticket[]>([]);
+  const pollInterval = 10000; // 10 seconds
 
-//   // Mostra o esqueleto durante o carregamento
-//   if (isLoading) {
-//     return (
-//       <div className="space-y-4">
-//         <TicketCardSkeleton />
-//         <TicketCardSkeleton />
-//         <TicketCardSkeleton />
-//       </div>
-//     );
-//   }
+  const fetchTickets = useCallback(async () => {
+    if (!user?.id_restaurante) {
+      setLoading(false);
+      return;
+    }
 
-//   // Filtra os tickets pelo status e considera o tempo_restante para expirados
-//   const filteredTickets = tickets.filter(ticket => {
-//     if (status === 'expired') {
-//       return ticket.status === 'expired' || ticket.tempo_restante === "Expirado";
-//     }
-//     if (status === 'active') {
-//       return ticket.status === status && ticket.tempo_restante !== "Expirado";
-//     }
-//     return ticket.status === status;
-//   });
+    try {
+      const response = await api.get<{
+        tickets: {
+          data: Ticket[];
+        };
+      }>(`/restaurantes/${user.id_restaurante}/tickets`);
 
-//   const handleUseTicket = async (ticketId: string) => {
-//     try {
-//       await useTicket(ticketId);
-//     } catch (error) {
-//       console.error('Erro ao usar ticket:', error);
-//     }
-//   };
+      const newTickets = response.data.tickets.data;
+      if (!isEqual(newTickets, previousTickets.current)) {
+        setTickets(newTickets);
+        previousTickets.current = newTickets;
+      }
+      setError(null);
+    } catch {
+      setError("Erro ao carregar tickets");
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id_restaurante]);
 
-//   // Mostra a mensagem apenas se não estiver carregando e não houver tickets
-//   if (!isLoading && filteredTickets.length === 0) {
-//     return (
-//       <Alert variant="default" className="bg-muted/50">
-//         <AlertCircle className="w-4 h-4" />
-//         <AlertDescription>
-//           {status === 'active' && 'Você não tem tickets ativos no momento.'}
-//           {status === 'used' && 'Nenhum ticket usado recentemente.'}
-//           {status === 'expired' && 'Nenhum ticket expirado.'}
-//         </AlertDescription>
-//       </Alert>
-//     );
-//   }
+  useEffect(() => {
+    fetchTickets();
+    const interval = setInterval(fetchTickets, pollInterval);
 
-//   return (
-//     <div className="mb-6 space-y-4">
-//       {filteredTickets.map(ticket => (
-//         <TicketCard
-//           key={ticket.id}
-//           ticket={{
-//             ...ticket,
-//             status: ticket.tempo_restante === "Expirado" ? 'expired' : ticket.status
-//           }}
-//           onUseTicket={status === 'active' ? handleUseTicket : undefined}
-//         />
-//       ))}
-//     </div>
-//   );
-// }
+    return () => clearInterval(interval);
+  }, [fetchTickets]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + window.scrollY >=
+          document.documentElement.scrollHeight - 100 &&
+        visibleCount < tickets.length
+      ) {
+        setVisibleCount((prev) => Math.min(prev + 5, tickets.length));
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [visibleCount, tickets.length]);
+
+  return (
+    <div className="space-y-4">
+      <Card className="bg-card">
+        <CardHeader>
+          <CardTitle className="text-card-foreground">
+            Histórico de Tickets {!loading && `(${tickets.length})`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            {loading ? (
+              <>
+                <TicketCardSkeleton />
+                <TicketCardSkeleton />
+                <TicketCardSkeleton />
+              </>
+            ) : error ? (
+              <div className="flex h-40 flex-col items-center justify-center">
+                <p className="text-destructive">{error}</p>
+              </div>
+            ) : (
+              <AnimatePresence>
+                {tickets.slice(0, visibleCount).map((ticket, index) => (
+                  <TicketCard
+                    key={ticket.id}
+                    numero={ticket.numero}
+                    funcionario={ticket.funcionario}
+                    tipo_refeicao={ticket.tipo_refeicao}
+                    data_emissao={ticket.data_emissao}
+                    status_texto={ticket.status_texto}
+                    index={index}
+                  />
+                ))}
+              </AnimatePresence>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -81,10 +81,11 @@ export function TicketsPendentes() {
         result.similarity >= result.confidence
       ) {
         await ticketService.aprovarTicket(selectedTicket.id, true);
+        // Remover o ticket da lista de pendentes
+        removeTicket(selectedTicket.id);
         toast.success("Ticket Aprovado", {
           description: "Reconhecimento facial confirmado com sucesso",
         });
-        removeTicket(selectedTicket.id);
         setShowRecognition(false);
         setSelectedTicket(null);
       } else {
