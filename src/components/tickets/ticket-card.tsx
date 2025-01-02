@@ -5,12 +5,17 @@ import { motion } from "framer-motion";
 
 interface TicketCardProps {
   numero: number;
-  funcionario: {
+  funcionario?: {
     nome: string;
   } | null;
   tipo_refeicao: string;
   data_emissao: string;
   status_texto: string;
+  data_hora_leitura_restaurante?: string | null;
+  usuario_leitura?: {
+    id: number;
+    nome: string;
+  } | null;
   index: number;
 }
 
@@ -20,6 +25,8 @@ export function TicketCard({
   tipo_refeicao,
   data_emissao,
   status_texto,
+  data_hora_leitura_restaurante,
+  usuario_leitura,
   index,
 }: TicketCardProps) {
   return (
@@ -61,6 +68,34 @@ export function TicketCard({
                 })}
               </span>
             </div>
+
+            {usuario_leitura && data_hora_leitura_restaurante && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Conferido por
+                  </span>
+                  <span className="text-sm text-foreground">
+                    {usuario_leitura.nome}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Data conferência
+                  </span>
+                  <span className="text-sm text-foreground">
+                    {format(
+                      new Date(data_hora_leitura_restaurante),
+                      "dd/MM/yyyy HH:mm",
+                      {
+                        locale: ptBR,
+                      },
+                    )}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
