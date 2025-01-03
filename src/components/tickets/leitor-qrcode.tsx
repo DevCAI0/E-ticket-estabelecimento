@@ -20,7 +20,7 @@ export function LeitorQRCode() {
   const [lendo, setLendo] = useState(true);
   const [resultado, setResultado] = useState<ResultadoLeitura | null>(null);
   const ticketService = useTicketService();
-  const { addTicket } = usePendingTickets();
+  const { addTicket, updateTicketStatus } = usePendingTickets();
   const { user } = useAuth();
 
   const handleScan = async (qrCode: string) => {
@@ -59,6 +59,11 @@ export function LeitorQRCode() {
   };
 
   const handleTicketApproved = () => {
+    if (resultado?.ticket) {
+      // Atualiza o status do ticket para aprovado (3)
+      updateTicketStatus(resultado.ticket.id, 3);
+    }
+
     setResultado((prev) =>
       prev
         ? {

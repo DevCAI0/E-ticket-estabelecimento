@@ -47,6 +47,24 @@ export function usePendingTickets() {
     });
   };
 
+  const updateTicketStatus = (ticketId: number, newStatus: number) => {
+    setPendingTickets((current) => {
+      // Se o novo status for 3 (aprovado), remove o ticket
+      if (newStatus === 3) {
+        const newTickets = current.filter((t) => t.id !== ticketId);
+        localStorage.setItem("pendingTickets", JSON.stringify(newTickets));
+        return newTickets;
+      }
+
+      // Caso contrário, atualiza o status do ticket
+      const newTickets = current.map((ticket) =>
+        ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket,
+      );
+      localStorage.setItem("pendingTickets", JSON.stringify(newTickets));
+      return newTickets;
+    });
+  };
+
   const removeTicket = (ticketId: number) => {
     setPendingTickets((current) => {
       const newTickets = current.filter((t) => t.id !== ticketId);
@@ -63,6 +81,7 @@ export function usePendingTickets() {
   return {
     pendingTickets,
     addTicket,
+    updateTicketStatus,
     removeTicket,
     clearTickets,
   };
