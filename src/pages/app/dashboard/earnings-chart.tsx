@@ -18,7 +18,7 @@ export const EarningsChart = () => {
   const [data, setData] = useState<ChartData[]>([
     {
       id: "approved_tickets",
-      category: "Tickets nas últimas 24h",
+      category: "Tickets últimas 24h",
       amount: 0,
       color: "hsl(var(--chart-1))",
       radius: 42,
@@ -103,18 +103,18 @@ export const EarningsChart = () => {
         {data.map((item) => (
           <div
             key={item.id}
-            className="flex w-full items-center justify-end gap-4"
+            className="flex w-full items-center justify-end gap-4 pb-2"
           >
-            <div className="flex items-center gap-1 pl-16">
+            <div className="flex items-center gap-2 pl-16">
               <div
                 className="h-3 w-3 rounded-full"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="text-xl font-medium text-muted-foreground">
+              <span className="text-sm font-medium text-muted-foreground">
                 {item.category}
               </span>
             </div>
-            <span className="text-xl font-semibold">
+            <span className="text-sm font-semibold">
               {item.amount.toLocaleString()}
             </span>
           </div>
