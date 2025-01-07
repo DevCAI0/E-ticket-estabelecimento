@@ -12,14 +12,13 @@ interface SearchFilterProps {
   ignoreAccents?: boolean;
 }
 
-// Função para processar o texto (remover acentos e espaços extras)
 const processText = (str: string): string => {
   return str
-    .trim() // Remove espaços no início e fim
+    .trim()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-    .replace(/[^a-zA-Z0-9\s]/g, "") // Remove caracteres especiais
-    .replace(/\s+/g, " "); // Remove múltiplos espaços entre palavras
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9\s]/g, "")
+    .replace(/\s+/g, " ");
 };
 
 export function SearchFilter({

@@ -8,18 +8,15 @@ interface PendingTicket extends Ticket {
 export function usePendingTickets() {
   const [pendingTickets, setPendingTickets] = useState<PendingTicket[]>([]);
 
-  // Carrega tickets do localStorage ao iniciar
   useEffect(() => {
     const stored = localStorage.getItem("pendingTickets");
     if (stored) {
       const tickets: PendingTicket[] = JSON.parse(stored);
-      // Filtra tickets expirados e aprovados
       const validTickets = tickets.filter((ticket) => {
         const expirationDate = new Date(ticket.expiracao);
         return expirationDate > new Date() && ticket.status !== 3;
       });
       setPendingTickets(validTickets);
-      // Atualiza localStorage se algum ticket foi removido
       if (validTickets.length !== tickets.length) {
         localStorage.setItem("pendingTickets", JSON.stringify(validTickets));
       }
@@ -27,11 +24,9 @@ export function usePendingTickets() {
   }, []);
 
   const addTicket = (ticket: Ticket) => {
-    // Não adiciona tickets já aprovados
     if (ticket.status === 3) return;
 
     setPendingTickets((current) => {
-      // Verifica se o ticket já existe
       if (current.some((t) => t.id === ticket.id)) {
         return current;
       }
@@ -49,14 +44,12 @@ export function usePendingTickets() {
 
   const updateTicketStatus = (ticketId: number, newStatus: number) => {
     setPendingTickets((current) => {
-      // Se o novo status for 3 (aprovado), remove o ticket
       if (newStatus === 3) {
         const newTickets = current.filter((t) => t.id !== ticketId);
         localStorage.setItem("pendingTickets", JSON.stringify(newTickets));
         return newTickets;
       }
 
-      // Caso contrário, atualiza o status do ticket
       const newTickets = current.map((ticket) =>
         ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket,
       );

@@ -55,11 +55,11 @@ export function TicketDetails({ ticket, onApproved }: TicketDetailsProps) {
   const getStatusColor = (status: number) => {
     switch (status) {
       case 1:
-        return "text-yellow-600"; // Emitido
+        return "text-yellow-600";
       case 2:
-        return "text-green-600"; // Usado
+        return "text-green-600";
       case 3:
-        return "text-red-600"; // Cancelado
+        return "text-red-600";
       default:
         return "text-gray-600";
     }

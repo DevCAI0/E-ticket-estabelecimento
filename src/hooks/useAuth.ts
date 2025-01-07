@@ -71,18 +71,15 @@ export const useAuth = (): AuthContextType => {
         permissions: loginData.permissions,
       };
 
-      // Armazena dados criptografados
       storeEncryptedToken(loginData.token);
       localStorage.setItem(
         "encryptedUser",
         encryptData(JSON.stringify(userData)),
       );
 
-      // Atualiza estado
       setUser(userData);
       setToken(loginData.token);
 
-      // Configura token para requisições
       api.defaults.headers.common["Authorization"] =
         `Bearer ${loginData.token}`;
 

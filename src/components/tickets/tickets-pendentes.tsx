@@ -16,13 +16,11 @@ interface TicketCardProps {
   onApprove: (ticket: Ticket) => void;
 }
 
-// Componente para o card individual do ticket
 function TicketCard({ ticket, onRemove, onApprove }: TicketCardProps) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4">
         <div className="flex flex-col gap-3">
-          {/* Cabeçalho do Ticket */}
           <div className="flex items-center justify-between">
             <span className="rounded-md bg-muted px-2 py-1 text-sm font-medium">
               #{ticket.numero}
@@ -31,8 +29,6 @@ function TicketCard({ ticket, onRemove, onApprove }: TicketCardProps) {
               {ticket.tipo_refeicao}
             </span>
           </div>
-
-          {/* Informações do Funcionário */}
           <div>
             <p className="font-medium">{ticket.funcionario.nome}</p>
             <p className="text-xs text-muted-foreground">
@@ -40,7 +36,6 @@ function TicketCard({ ticket, onRemove, onApprove }: TicketCardProps) {
             </p>
           </div>
 
-          {/* Ações */}
           <div className="flex justify-end gap-2 pt-2">
             <Button
               variant="outline"
@@ -66,7 +61,6 @@ function TicketCard({ ticket, onRemove, onApprove }: TicketCardProps) {
   );
 }
 
-// Componente principal
 export function TicketsPendentes() {
   const { pendingTickets, removeTicket } = usePendingTickets();
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -126,7 +120,6 @@ export function TicketsPendentes() {
         )}
       </div>
 
-      {/* Dialog de Reconhecimento Facial */}
       {selectedTicket && (
         <FacialRecognitionDialog
           open={showRecognition}

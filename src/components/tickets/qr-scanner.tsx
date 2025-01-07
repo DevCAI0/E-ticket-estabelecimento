@@ -25,7 +25,6 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
   const [isFrontCamera, setIsFrontCamera] = useState<boolean>(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  // Adiciona estilos CSS necessários para exibir o vídeo corretamente
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `
@@ -94,12 +93,11 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
         { facingMode: isFrontCamera ? "user" : { exact: "environment" } },
         config,
         handleScanSuccess,
-        () => {}, // Ignore errors durante o scanning
+        () => {},
       );
       setIsScanning(true);
     } catch (err) {
       console.error("Erro ao iniciar scanner:", err);
-      // Se falhar com 'exact: environment', tenta sem exact
       if (!isFrontCamera) {
         try {
           const fallbackConfig = {
@@ -140,7 +138,6 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
   };
 
   const handleCameraSwitch = async (checked: boolean) => {
-    // Se estiver escaneando, não permite a troca
     if (isScanning) {
       showErrorToast("Pare o scanner antes de trocar a câmera");
       return;
@@ -200,9 +197,7 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
 
   return (
     <div className="flex h-full flex-col bg-black/95">
-      {/* Header */}
       <div className="flex items-center justify-between p-4">
-        {/* Botão Voltar/Parar */}
         <Button
           variant="ghost"
           size="icon"
@@ -212,7 +207,6 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
           <X className="h-6 w-6" />
         </Button>
 
-        {/* Camera Switch */}
         <div className="flex items-center gap-2">
           <Label htmlFor="camera-switch" className="text-sm text-white">
             {isFrontCamera ? "Câmera Frontal" : "Câmera Traseira"}
@@ -221,21 +215,18 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
             id="camera-switch"
             checked={isFrontCamera}
             onCheckedChange={handleCameraSwitch}
-            disabled={isScanning} // Desabilita durante o scanning
+            disabled={isScanning}
           />
         </div>
       </div>
 
-      {/* Scanner Area */}
       <div className="flex flex-1 flex-col items-center justify-center px-4">
         <div className="relative aspect-square w-full max-w-[280px]">
-          {/* Corner Markers */}
           <div className="absolute left-0 top-0 z-10 h-8 w-8 rounded-tl-lg border-l-2 border-t-2 border-white" />
           <div className="absolute right-0 top-0 z-10 h-8 w-8 rounded-tr-lg border-r-2 border-t-2 border-white" />
           <div className="absolute bottom-0 left-0 z-10 h-8 w-8 rounded-bl-lg border-b-2 border-l-2 border-white" />
           <div className="absolute bottom-0 right-0 z-10 h-8 w-8 rounded-br-lg border-b-2 border-r-2 border-white" />
 
-          {/* QR Scanner */}
           <div
             id="qr-reader"
             className={`h-full w-full overflow-hidden rounded-lg bg-black ${
@@ -243,7 +234,6 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
             }`}
           />
 
-          {/* Botão de iniciar */}
           {!isScanning && (
             <div className="absolute inset-0 flex items-center justify-center">
               <Button
@@ -263,7 +253,6 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
         </p>
       </div>
 
-      {/* Bottom Action */}
       <div className="p-4">
         <input
           type="file"

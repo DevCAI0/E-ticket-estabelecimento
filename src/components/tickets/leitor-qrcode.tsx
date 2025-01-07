@@ -60,7 +60,6 @@ export function LeitorQRCode() {
 
   const handleTicketApproved = () => {
     if (resultado?.ticket) {
-      // Atualiza o status do ticket para aprovado (3)
       updateTicketStatus(resultado.ticket.id, 3);
     }
 

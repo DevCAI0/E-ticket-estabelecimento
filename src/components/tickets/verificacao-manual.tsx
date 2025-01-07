@@ -11,11 +11,10 @@ import { TicketDetails } from "./ticket-details";
 import type { Ticket } from "@/types/ticket";
 import { useAuth } from "@/hooks/useAuth";
 
-// Em verificacao-manual.tsx e leitor-qrcode.tsx
 interface ResultadoVerificacao {
   status: "success" | "error";
   mensagem: string;
-  ticket?: Ticket; // Usando o tipo Ticket atualizado
+  ticket?: Ticket;
 }
 export function VerificacaoManual() {
   const [numeroTicket, setNumeroTicket] = useState("");
@@ -44,7 +43,6 @@ export function VerificacaoManual() {
   };
 
   const handleNumeroTicketChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Permite apenas números
     const value = e.target.value.replace(/\D/g, "");
     setNumeroTicket(value);
   };
