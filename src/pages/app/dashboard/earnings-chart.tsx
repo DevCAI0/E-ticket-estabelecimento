@@ -18,14 +18,14 @@ export const EarningsChart = () => {
   const [data, setData] = useState<ChartData[]>([
     {
       id: "approved_tickets",
-      category: "Tickets últimas 24h",
+      category: "Tickets nas últimas 24h",
       amount: 0,
       color: "hsl(var(--chart-1))",
       radius: 42,
     },
     {
       id: "pending_tickets",
-      category: "pendentes",
+      category: "Pendentes",
       amount: 0,
       color: "hsl(var(--chart-2))",
       radius: 30,
@@ -73,8 +73,8 @@ export const EarningsChart = () => {
   };
 
   return (
-    <div className="flex flex-row items-center justify-between gap-4 p-6">
-      <div className="relative h-32 w-32">
+    <div className="flex items-center justify-between p-4">
+      <div className="relative h-24 w-24">
         <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
           {data.map((item) => {
             const circumference = 2 * Math.PI * item.radius;
@@ -99,17 +99,22 @@ export const EarningsChart = () => {
         </svg>
       </div>
 
-      <div className="flex flex-col space-y-2">
+      <div className="flex flex-1 flex-col -space-y-1">
         {data.map((item) => (
-          <div key={item.id} className="flex items-center gap-2">
-            <div
-              className="h-3 w-3 rounded-full"
-              style={{ backgroundColor: item.color }}
-            />
-            <span className="text-sm text-muted-foreground">
-              {item.category}
-            </span>
-            <span className="text-sm font-medium">
+          <div
+            key={item.id}
+            className="flex w-full items-center justify-end gap-4"
+          >
+            <div className="flex items-center gap-1 pl-16">
+              <div
+                className="h-3 w-3 rounded-full"
+                style={{ backgroundColor: item.color }}
+              />
+              <span className="text-xl font-medium text-muted-foreground">
+                {item.category}
+              </span>
+            </div>
+            <span className="text-xl font-semibold">
               {item.amount.toLocaleString()}
             </span>
           </div>
