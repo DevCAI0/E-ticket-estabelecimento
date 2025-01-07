@@ -6,7 +6,7 @@ import { dashboardActions } from "./dashboard-actions";
 
 export const EstablishmentDashboard = () => {
   return (
-    <div className="flex flex-col rounded border border-border pb-6">
+    <div className="flex flex-col rounded pb-6">
       <div className="p-4">
         <Card className="border border-border">
           <CardContent className="p-0">
