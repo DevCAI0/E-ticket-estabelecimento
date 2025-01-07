@@ -1,22 +1,21 @@
-import { useEffect, useState, useCallback, useRef } from "react";
-import { api } from "@/lib/axios";
-import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TicketCard } from "./ticket-card";
-import { AnimatePresence } from "framer-motion";
 import { TicketCardSkeleton } from "./ticket-card-skeleton";
-import { isEqual } from "lodash";
+import { Button } from "@/components/ui/button";
+import { AnimatePresence } from "framer-motion";
 import { TicketActions } from "./ticket-actions";
+import Loading from "../Loading";
+import { ArrowUp } from "lucide-react";
 
-interface Funcionario {
-  id_funcionario: number;
-  nome: string;
-  cpf: string;
-}
 interface Ticket {
   id: number;
   numero: number;
-  funcionario: Funcionario;
+  funcionario: {
+    id_funcionario: number;
+    nome: string;
+    cpf: string;
+  };
   tipo_refeicao: string;
   status: number;
   status_texto: string;
@@ -30,144 +29,135 @@ interface Ticket {
   } | null;
 }
 
-export function TicketsList() {
-  const [tickets, setTickets] = useState<Ticket[]>(() => {
-    const cached = localStorage.getItem("tickets");
-    return cached ? JSON.parse(cached) : [];
-  });
-  const [loading, setLoading] = useState(!tickets.length);
-  const [error, setError] = useState<string | null>(null);
-  const [visibleCount, setVisibleCount] = useState(15);
+interface TicketsListProps {
+  tickets: Ticket[];
+  loading: boolean;
+  hasMore: boolean;
+  loadMoreTickets: () => void;
+}
+
+export function TicketsList({
+  tickets,
+  loading,
+  hasMore,
+  loadMoreTickets,
+}: TicketsListProps) {
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [search, setSearch] = useState("");
   const [mealType, setMealType] = useState("all");
-  const { user } = useAuth();
-  const previousTickets = useRef<Ticket[]>([]);
-  const isInitialMount = useRef(true);
-  const pollInterval = 10000;
-
-  const fetchTickets = useCallback(
-    async (showLoading = true) => {
-      if (!user?.id_restaurante) return;
-
-      if (showLoading) setLoading(true);
-
-      try {
-        const response = await api.get<{
-          tickets: {
-            data: Ticket[];
-          };
-        }>(`/restaurantes/${user.id_restaurante}/tickets`);
-
-        const newTickets = response.data.tickets.data;
-
-        if (!isEqual(newTickets, previousTickets.current)) {
-          setTickets(newTickets);
-          previousTickets.current = newTickets;
-          localStorage.setItem("tickets", JSON.stringify(newTickets));
-        }
-
-        setError(null);
-      } catch {
-        setError("Erro ao carregar tickets");
-      } finally {
-        if (showLoading) setLoading(false);
-      }
-    },
-    [user?.id_restaurante],
-  );
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      if (!tickets.length) {
-        fetchTickets(true);
-      }
-      isInitialMount.current = false;
-    } else {
-      fetchTickets(false);
-    }
-
-    const interval = setInterval(() => {
-      fetchTickets(false);
-    }, pollInterval);
-
-    return () => clearInterval(interval);
-  }, [fetchTickets, tickets.length]);
-
-  const filteredTickets = tickets.filter((ticket) => {
-    const searchTerm = search.toLowerCase().trim();
-    return (
-      (searchTerm === "" ||
-        ticket.numero.toString().includes(searchTerm) ||
-        ticket.funcionario?.nome.toLowerCase().includes(searchTerm)) &&
-      (mealType === "all" || ticket.tipo_refeicao === mealType)
-    );
-  });
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >=
-          document.documentElement.scrollHeight - 100 &&
-        visibleCount < filteredTickets.length
-      ) {
-        setVisibleCount((prev) => Math.min(prev + 15, filteredTickets.length));
-      }
+      const hasScroll =
+        window.innerHeight < document.documentElement.scrollHeight;
+      setShowScrollTop(hasScroll);
     };
 
     window.addEventListener("scroll", handleScroll);
+    handleScroll(); // Check initially
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [visibleCount, filteredTickets.length]);
+  }, [tickets.length]);
 
-  return (
-    <div className="space-y-4">
-      <TicketActions
-        onSearchChange={setSearch}
-        onMealTypeChange={setMealType}
-      />
+  const handleLoadMore = async () => {
+    if (isLoadingMore) return;
+    setIsLoadingMore(true);
+    await loadMoreTickets();
+    setIsLoadingMore(false);
+  };
 
+  const filteredTickets = tickets.filter((ticket) => {
+    const searchMatch =
+      search.toLowerCase() === "" ||
+      ticket.numero.toString().includes(search.toLowerCase()) ||
+      ticket.funcionario.nome.toLowerCase().includes(search.toLowerCase());
+
+    const mealTypeMatch =
+      mealType === "all" || ticket.tipo_refeicao === mealType;
+
+    return searchMatch && mealTypeMatch;
+  });
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  if (loading && !isLoadingMore) {
+    return (
       <Card className="bg-card">
         <CardHeader>
           <CardTitle className="text-card-foreground">
-            Histórico de Tickets {!loading && `(${filteredTickets.length})`}
+            Histórico de Tickets
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4">
-            {loading ? (
-              <>
-                <TicketCardSkeleton />
-                <TicketCardSkeleton />
-                <TicketCardSkeleton />
-              </>
-            ) : error ? (
-              <div className="flex h-40 flex-col items-center justify-center">
-                <p className="text-destructive">{error}</p>
+            <TicketCardSkeleton />
+            <TicketCardSkeleton />
+            <TicketCardSkeleton />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="sticky top-11 z-10 space-y-4 bg-background">
+        <TicketActions
+          onSearchChange={setSearch}
+          onMealTypeChange={setMealType}
+        />
+        <div className="rounded-lg bg-card pl-6 shadow-sm">
+          <h2 className="text-lg font-semibold">
+            Histórico de Tickets ({filteredTickets.length})
+          </h2>
+        </div>
+      </div>
+
+      <Card className="border-none bg-card">
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            <AnimatePresence>
+              {filteredTickets.map((ticket, index) => (
+                <TicketCard key={ticket.id} {...ticket} index={index} />
+              ))}
+            </AnimatePresence>
+
+            {isLoadingMore && (
+              <div className="py-4">
+                <Loading
+                  variant="dots"
+                  size="md"
+                  text="Carregando mais tickets..."
+                  color="primary"
+                />
               </div>
-            ) : filteredTickets.length === 0 ? (
-              <div className="flex h-40 flex-col items-center justify-center">
-                <p className="text-muted-foreground">
-                  Nenhum ticket encontrado
-                </p>
-              </div>
-            ) : (
-              <AnimatePresence mode="popLayout">
-                {filteredTickets.slice(0, visibleCount).map((ticket, index) => (
-                  <TicketCard
-                    key={ticket.id}
-                    numero={ticket.numero}
-                    funcionario={ticket.funcionario}
-                    tipo_refeicao={ticket.tipo_refeicao}
-                    data_emissao={ticket.data_emissao}
-                    status_texto={ticket.status_texto}
-                    data_hora_leitura_restaurante={
-                      ticket.data_hora_leitura_restaurante
-                    }
-                    usuario_leitura={ticket.usuario_leitura}
-                    index={index}
-                  />
-                ))}
-              </AnimatePresence>
             )}
+
+            <div className="mt-4 flex flex-col items-center gap-4">
+              {hasMore && filteredTickets.length > 0 && (
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-primary"
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? "Carregando..." : "Ver Mais"}
+                </Button>
+              )}
+
+              {showScrollTop && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={scrollToTop}
+                  className="rounded-full"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
