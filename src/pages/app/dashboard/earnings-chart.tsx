@@ -18,7 +18,7 @@ export const EarningsChart = () => {
   const [data, setData] = useState<ChartData[]>([
     {
       id: "approved_tickets",
-      category: "Tickets últimas 24h",
+      category: "🎫 últimas 24h",
       amount: 0,
       color: "hsl(var(--chart-1))",
       radius: 42,
