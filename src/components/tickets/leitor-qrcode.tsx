@@ -74,25 +74,25 @@ export function LeitorQRCode() {
     );
   };
 
-  // Verifica permissão do usuário
-  if (!user?.id_restaurante) {
-    return (
-      <div className="mx-auto w-full max-w-md px-4">
-        <Card className="overflow-hidden">
-          <CardContent className="p-6">
-            <Alert variant="destructive">
-              <AlertCircle className="h-5 w-5" />
-              <AlertTitle>Acesso Negado</AlertTitle>
-              <AlertDescription>
-                Você não tem permissão para ler tickets. Contate o
-                administrador.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // // Verifica permissão do usuário
+  // if (!user?.id_restaurante) {
+  //   return (
+  //     <div className="w-full max-w-md px-4 mx-auto">
+  //       <Card className="overflow-hidden">
+  //         <CardContent className="p-6">
+  //           <Alert variant="destructive">
+  //             <AlertCircle className="w-5 h-5" />
+  //             <AlertTitle>Acesso Negado</AlertTitle>
+  //             <AlertDescription>
+  //               Você não tem permissão para ler tickets. Contate o
+  //               administrador.
+  //             </AlertDescription>
+  //           </Alert>
+  //         </CardContent>
+  //       </Card>
+  //     </div>
+  //   );
+  // }
 
   const renderResultado = () => {
     if (!resultado) return null;

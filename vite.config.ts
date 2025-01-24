@@ -70,7 +70,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       host: "0.0.0.0",
-      port: 5174,
+      port: 5175,
       cors: {
         origin: apiUrl,
         credentials: true,
