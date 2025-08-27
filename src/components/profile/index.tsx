@@ -9,7 +9,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LogOut, User } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { showErrorToast } from "@/components/ui/sonner";
 
 export function Profile() {
   const { user, logout } = useAuth();
@@ -24,7 +25,7 @@ export function Profile() {
     try {
       await logout();
     } catch (error) {
-      console.error("Erro ao fazer logout:", error);
+      showErrorToast("Erro ao fazer logout");
     }
   };
 

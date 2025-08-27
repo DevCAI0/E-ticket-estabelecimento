@@ -1,42 +1,24 @@
-// src/types/auth.ts
-export interface User {
-  id: number;
-  nome: string;
-  login: string;
-  email: string | null;
-  id_estabelecimento: number;
-  id_restaurante: number | null;
-  id_perfil: number;
-  id_empresa: number;
-  alterou_senha: number;
-  status: number;
-  id_cadastro: number;
-  data_cadastro: string;
-  id_alteracao: number;
-  data_alteracao: string;
-  permissions: Permissions;
-  perfil_descricao: string;
-}
+// src/types/auth.ts - Tipos específicos de autenticação
+import { SignInCredentials, User } from "./user";
 
-export interface Permissions {
-  v_ticket?: string;
-  c_ticket?: string;
-  v_estabelecimento?: string;
-  v_restaurante_ticket?: string;
-  aceitar_pedido?: string;
-  [key: string]: string | undefined;
-}
-
-export interface AuthCredentials {
-  identifier: string;
-  senha: string;
+export interface AuthResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    usuario: User;
+    token: string;
+    tipo: string;
+  };
 }
 
 export interface LoginResponse {
+  success: boolean;
   message: string;
-  user: User;
-  permissions: Permissions;
-  token: string;
+  data: {
+    usuario: User;
+    token: string;
+    tipo: string;
+  };
 }
 
 export interface AuthError {
@@ -51,10 +33,7 @@ export interface AuthResult {
   token?: string;
   message?: string;
 }
-export interface SignInCredentials {
-  cpf: string;
-  matricula: string;
-}
+
 export interface AuthContextData {
   user: User | null;
   isAuthenticated: boolean;

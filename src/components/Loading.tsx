@@ -5,6 +5,7 @@ interface LoadingProps {
   color?: "primary" | "secondary" | "white";
   fullScreen?: boolean;
   hasBackdrop?: boolean;
+  progress?: number; // ✅ Adicionar propriedade progress
 }
 
 const Loading = ({
@@ -14,6 +15,7 @@ const Loading = ({
   color = "primary",
   fullScreen = false,
   hasBackdrop = false,
+  progress, // ✅ Aceitar progress como prop
 }: LoadingProps) => {
   const sizeClasses = {
     sm: "w-4 h-4",
@@ -28,9 +30,17 @@ const Loading = ({
   };
 
   const renderSpinner = () => (
-    <div
-      className={` ${sizeClasses[size]} animate-spin rounded-full border-2 border-t-transparent ${colorClasses[color]} `}
-    />
+    <div className="relative">
+      <div
+        className={`${sizeClasses[size]} animate-spin rounded-full border-2 border-t-transparent ${colorClasses[color]}`}
+      />
+      {/* ✅ Mostrar progresso se fornecido */}
+      {progress !== undefined && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-xs font-medium">{Math.round(progress)}%</span>
+        </div>
+      )}
+    </div>
   );
 
   const renderDots = () => (
@@ -38,7 +48,9 @@ const Loading = ({
       {[1, 2, 3].map((dot) => (
         <div
           key={dot}
-          className={`rounded-full ${color === "white" ? "bg-white" : "bg-primary"} animate-bounce ${size === "sm" ? "h-1 w-1" : size === "md" ? "h-2 w-2" : "h-3 w-3"} `}
+          className={`rounded-full ${color === "white" ? "bg-white" : "bg-primary"} animate-bounce ${
+            size === "sm" ? "h-1 w-1" : size === "md" ? "h-2 w-2" : "h-3 w-3"
+          }`}
           style={{
             animationDelay: `${dot * 0.1}s`,
             animationDuration: "0.6s",
@@ -50,7 +62,9 @@ const Loading = ({
 
   const renderPulse = () => (
     <div
-      className={` ${sizeClasses[size]} rounded-full ${color === "white" ? "bg-white" : "bg-primary"} animate-pulse`}
+      className={`${sizeClasses[size]} rounded-full ${
+        color === "white" ? "bg-white" : "bg-primary"
+      } animate-pulse`}
     />
   );
 
@@ -66,20 +80,28 @@ const Loading = ({
   };
 
   const containerClasses = `
-      flex flex-col items-center justify-center
-      ${fullScreen ? "fixed inset-0" : "w-full h-full"}
-      ${hasBackdrop ? "bg-black/50" : ""}
-      ${text ? "gap-3" : "gap-0"}
-    `;
+    flex flex-col items-center justify-center
+    ${fullScreen ? "fixed inset-0" : "w-full h-full"}
+    ${hasBackdrop ? "bg-black/50" : ""}
+    ${text ? "gap-3" : "gap-0"}
+  `;
 
   return (
     <div className={containerClasses}>
       {renderLoader()}
       {text && (
         <span
-          className={`text-sm font-medium ${color === "white" ? "text-white" : "text-gray-600"}`}
+          className={`text-sm font-medium ${
+            color === "white" ? "text-white" : "text-gray-600"
+          }`}
         >
           {text}
+        </span>
+      )}
+      {/* ✅ Mostrar progresso como texto adicional se fornecido */}
+      {progress !== undefined && !text && (
+        <span className="mt-2 text-sm font-medium text-gray-600">
+          {Math.round(progress)}% concluído
         </span>
       )}
     </div>

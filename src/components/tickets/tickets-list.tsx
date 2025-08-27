@@ -1,3 +1,4 @@
+// components/tickets/tickets-list.tsx
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TicketCard } from "./ticket-card";
@@ -7,30 +8,10 @@ import { AnimatePresence } from "framer-motion";
 import { TicketActions } from "./ticket-actions";
 import Loading from "../Loading";
 import { ArrowUp } from "lucide-react";
-
-interface Ticket {
-  id: number;
-  numero: number;
-  funcionario: {
-    id_funcionario: number;
-    nome: string;
-    cpf: string;
-  };
-  tipo_refeicao: string;
-  status: number;
-  status_texto: string;
-  data_emissao: string;
-  expiracao: string;
-  tempo_restante: string;
-  data_hora_leitura_restaurante: string | null;
-  usuario_leitura: {
-    id: number;
-    nome: string;
-  } | null;
-}
+import { TicketItem } from "@/api/tickets/tickets-list";
 
 interface TicketsListProps {
-  tickets: Ticket[];
+  tickets: TicketItem[];
   loading: boolean;
   hasMore: boolean;
   loadMoreTickets: () => void;
@@ -66,11 +47,40 @@ export function TicketsList({
     setIsLoadingMore(false);
   };
 
-  const filteredTickets = tickets.filter((ticket) => {
+  // Converter TicketItem[] para formato esperado pelo TicketCard
+  const normalizedTickets = tickets.map((ticketItem) => ({
+    id: ticketItem.data.id,
+    numero: ticketItem.data.numero,
+    funcionario: ticketItem.data.funcionario
+      ? {
+          id_funcionario: ticketItem.data.funcionario.id_funcionario,
+          nome: ticketItem.data.funcionario.nome,
+          cpf: ticketItem.data.funcionario.cpf,
+        }
+      : null,
+    tipo_refeicao: ticketItem.data.tipo_refeicao,
+    status: ticketItem.data.status,
+    status_texto: ticketItem.data.status_texto,
+    data_emissao: ticketItem.data.data_emissao,
+    expiracao: ticketItem.data.expiracao || ticketItem.data.data_validade || "",
+    tempo_restante: ticketItem.data.tempo_restante,
+    data_hora_leitura_restaurante:
+      ticketItem.data.data_hora_leitura_restaurante,
+    usuario_leitura: ticketItem.data.usuario_leitura,
+    // Campos adicionais para identificar tipo
+    tipo: ticketItem.tipo,
+    codigo: ticketItem.data.codigo,
+  }));
+
+  const filteredTickets = normalizedTickets.filter((ticket) => {
+    // Verificar se funcionario existe antes de acessar nome
     const searchMatch =
       search.toLowerCase() === "" ||
       ticket.numero.toString().includes(search.toLowerCase()) ||
-      ticket.funcionario.nome.toLowerCase().includes(search.toLowerCase());
+      (ticket.funcionario &&
+        ticket.funcionario.nome.toLowerCase().includes(search.toLowerCase())) ||
+      (ticket.codigo &&
+        ticket.codigo.toLowerCase().includes(search.toLowerCase()));
 
     const mealTypeMatch =
       mealType === "all" || ticket.tipo_refeicao === mealType;
@@ -81,6 +91,17 @@ export function TicketsList({
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Validação se tickets é array
+  if (!Array.isArray(tickets)) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-muted-foreground">
+          Erro: Dados de tickets inválidos
+        </p>
+      </div>
+    );
+  }
 
   if (loading && !isLoadingMore) {
     return (
@@ -120,9 +141,32 @@ export function TicketsList({
           <div className="flex flex-col gap-4">
             <AnimatePresence>
               {filteredTickets.map((ticket, index) => (
-                <TicketCard key={ticket.id} {...ticket} index={index} />
+                <TicketCard
+                  key={`${ticket.id}-${ticket.numero}-${index}`}
+                  numero={ticket.numero}
+                  funcionario={ticket.funcionario}
+                  tipo_refeicao={ticket.tipo_refeicao}
+                  data_emissao={ticket.data_emissao}
+                  status_texto={ticket.status_texto}
+                  data_hora_leitura_restaurante={
+                    ticket.data_hora_leitura_restaurante
+                  }
+                  usuario_leitura={ticket.usuario_leitura}
+                  index={index}
+                />
               ))}
             </AnimatePresence>
+
+            {/* Mensagem quando não há tickets */}
+            {filteredTickets.length === 0 && !loading && (
+              <div className="py-8 text-center">
+                <p className="text-muted-foreground">
+                  {search || mealType !== "all"
+                    ? "Nenhum ticket encontrado com os filtros aplicados"
+                    : "Nenhum ticket encontrado"}
+                </p>
+              </div>
+            )}
 
             {isLoadingMore && (
               <div className="py-4">

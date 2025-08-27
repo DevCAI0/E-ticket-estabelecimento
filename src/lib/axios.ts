@@ -1,7 +1,8 @@
 import axios from "axios";
 import { encryptData, decryptData } from "./crypto";
+import { showErrorToast } from "@/components/ui/sonner";
+import { User } from "@/types/user";
 
-// Cliente para chamadas de API
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   withCredentials: true,
@@ -12,7 +13,6 @@ export const api = axios.create({
   },
 });
 
-// Cliente para arquivos estáticos/imagens
 export const apiImage = axios.create({
   baseURL: import.meta.env.VITE_STORAGE_BASE_URL,
   withCredentials: true,
@@ -23,27 +23,64 @@ export const apiImage = axios.create({
   responseType: "blob",
 });
 
-// Função para armazenar o token
 export const storeEncryptedToken = (token: string) => {
   const encryptedToken = encryptData(token);
   localStorage.setItem("encryptedToken", encryptedToken);
 };
 
-// Função para limpar o token
 export const clearEncryptedToken = () => {
   localStorage.removeItem("encryptedToken");
+  localStorage.removeItem("encryptedUser");
 };
 
-// Função para configurar interceptors
+export const storeUserData = (userData: User) => {
+  try {
+    const encryptedUser = encryptData(userData);
+    localStorage.setItem("encryptedUser", encryptedUser);
+  } catch (_error) {
+    showErrorToast("Erro ao salvar dados do usuário");
+  }
+};
+
+export const getUserData = (): User | null => {
+  try {
+    const encryptedUser = localStorage.getItem("encryptedUser");
+    if (encryptedUser) {
+      const userData = decryptData(encryptedUser);
+      return userData;
+    }
+    return null;
+  } catch (_error) {
+    showErrorToast("Erro ao obter dados do usuário");
+    return null;
+  }
+};
+
+const getEmpresaId = (): string | null => {
+  try {
+    const userData = getUserData();
+    if (userData?.id_empresa) {
+      return userData.id_empresa.toString();
+    }
+    return null;
+  } catch (_error) {
+    showErrorToast("Erro ao obter empresa do usuário");
+    return null;
+  }
+};
+
 const setupInterceptors = (axiosInstance: typeof api | typeof apiImage) => {
-  // Interceptor para adicionar o token em todas as requisições
   axiosInstance.interceptors.request.use(
     (config) => {
       const encryptedToken = localStorage.getItem("encryptedToken");
-
       if (encryptedToken) {
         const token = decryptData(encryptedToken);
         config.headers.Authorization = `Bearer ${token}`;
+      }
+
+      const empresaId = getEmpresaId();
+      if (empresaId) {
+        config.headers["X-Current-Company"] = empresaId;
       }
 
       return config;
@@ -53,27 +90,18 @@ const setupInterceptors = (axiosInstance: typeof api | typeof apiImage) => {
     },
   );
 
-  // // Interceptor para tratar respostas e erros
-  // axiosInstance.interceptors.response.use(
-  //   (response) => response,
-  //   (error) => {
-  //     // Trata erro 401 (não autorizado)
-  //     if (error.response?.status === 401) {
-  //       localStorage.removeItem("encryptedToken");
-  //       localStorage.removeItem("encryptedUser");
-  //       window.location.href = "/auth/login";
-  //     }
+  axiosInstance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        clearEncryptedToken();
+        window.location.href = "/auth/login";
+      }
 
-  //     // // Trata erro 403 (sem permissão)
-  //     // if (error.response?.status === 403) {
-  //     //   window.location.href = '/access-denied';
-  //     // }
-
-  //     return Promise.reject(error);
-  //   },
-  // );
+      return Promise.reject(error);
+    },
+  );
 };
 
-// Configura os interceptors para ambas as instâncias
 setupInterceptors(api);
 setupInterceptors(apiImage);

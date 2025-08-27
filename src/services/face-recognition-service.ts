@@ -1,11 +1,10 @@
-// src/services/face-recognition.ts
-import { api } from "@/lib/axios";
-import * as faceapi from "face-api.js";
-
-interface ImageData {
-  url: string;
-  path: string;
-}
+import * as faceapi from "@vladmandic/face-api";
+import {
+  buscarImagensReferenciaPorId,
+  buscarImagemComoBlob,
+  dataUrlParaBlob,
+} from "@/api/facial-recognition/face-images";
+import { showErrorToast } from "@/components/ui/sonner";
 
 export interface VerificationResult {
   isMatch: boolean;
@@ -17,14 +16,13 @@ export interface VerificationResult {
 
 class FaceRecognitionService {
   private isInitialized = false;
-  private readonly SIMILARITY_THRESHOLD = 0.6; // 60% de similaridade mínima
-  private readonly CONFIDENCE_THRESHOLD = 0.7; // 70% de confiança mínima
+  private readonly SIMILARITY_THRESHOLD = 0.6;
+  private readonly CONFIDENCE_THRESHOLD = 0.7;
 
   async initialize() {
     if (this.isInitialized) return;
 
     try {
-      console.log("🚀 Iniciando carregamento dos modelos face-api.js...");
       const MODEL_URL = "/models";
       await Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
@@ -32,10 +30,9 @@ class FaceRecognitionService {
         faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
       ]);
 
-      console.log("✅ Modelos carregados com sucesso!");
       this.isInitialized = true;
     } catch (error) {
-      console.error("❌ Erro ao carregar modelos:", error);
+      showErrorToast("Erro ao carregar modelos de reconhecimento facial");
       throw error;
     }
   }
@@ -44,20 +41,12 @@ class FaceRecognitionService {
     id: string,
   ): Promise<faceapi.LabeledFaceDescriptors[]> {
     try {
-      console.log(`📡 Buscando imagens de referência para ID ${id}...`);
-
-      const { data } = await api.get<{ images: ImageData[] }>(
-        `/face/images/${id}`,
-      );
-      console.log("📸 Imagens encontradas:", data.images?.length || 0);
+      const images = await buscarImagensReferenciaPorId(id);
 
       const labeledDescriptors = await Promise.all(
-        data.images.map(async (image) => {
+        images.map(async (image) => {
           try {
-            const imageResponse = await api.get(image.url, {
-              responseType: "blob",
-            });
-            const imgBlob = imageResponse.data;
+            const imgBlob = await buscarImagemComoBlob(image.url);
             const img = await faceapi.bufferToImage(imgBlob);
 
             const detection = await faceapi
@@ -66,15 +55,13 @@ class FaceRecognitionService {
               .withFaceDescriptor();
 
             if (!detection) {
-              console.warn(`⚠️ Nenhum rosto detectado em: ${image.path}`);
               return null;
             }
 
             return new faceapi.LabeledFaceDescriptors(id, [
               detection.descriptor,
             ]);
-          } catch (error) {
-            console.error(`❌ Erro ao processar imagem ${image.path}:`, error);
+          } catch (_error) {
             return null;
           }
         }),
@@ -83,14 +70,10 @@ class FaceRecognitionService {
       const validDescriptors = labeledDescriptors.filter(
         (desc): desc is faceapi.LabeledFaceDescriptors => desc !== null,
       );
-      console.log(
-        "✅ Descritores válidos carregados:",
-        validDescriptors.length,
-      );
 
       return validDescriptors;
     } catch (error) {
-      console.error("❌ Erro ao carregar imagens de referência:", error);
+      showErrorToast("Erro ao carregar imagens de referência");
       throw error;
     }
   }
@@ -104,7 +87,6 @@ class FaceRecognitionService {
     try {
       await this.initialize();
 
-      // Carrega as imagens de referência do funcionário
       const referenceDescriptors =
         await this.loadReferenceImagesById(funcionarioId);
 
@@ -114,12 +96,9 @@ class FaceRecognitionService {
         );
       }
 
-      // Converte a imagem capturada para o formato aceito pelo face-api.js
-      const img = await faceapi.bufferToImage(
-        await (await fetch(capturedImage)).blob(),
-      );
+      const imgBlob = await dataUrlParaBlob(capturedImage);
+      const img = await faceapi.bufferToImage(imgBlob);
 
-      // Detecta o rosto na imagem capturada
       const detection = await faceapi
         .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks()
@@ -129,26 +108,24 @@ class FaceRecognitionService {
         throw new Error("Nenhum rosto detectado na imagem capturada");
       }
 
-      // Cria o matcher com as imagens de referência
       const faceMatcher = new faceapi.FaceMatcher(
         referenceDescriptors,
         this.SIMILARITY_THRESHOLD,
       );
 
-      // Faz o match do rosto capturado com as referências
       const match = faceMatcher.findBestMatch(detection.descriptor);
 
       const processingTime = performance.now() - startTime;
 
       return {
         isMatch: match.label !== "unknown",
-        similarity: (1 - match.distance) * 100, // Converte para porcentagem
+        similarity: (1 - match.distance) * 100,
         confidence: this.CONFIDENCE_THRESHOLD * 100,
         label: match.label,
         processingTime,
       };
     } catch (error) {
-      console.error("❌ Erro na verificação facial:", error);
+      showErrorToast("Erro na verificação facial");
       throw error;
     }
   }
@@ -158,15 +135,10 @@ class FaceRecognitionService {
     funcionarioId: string,
   ): Promise<VerificationResult> {
     try {
-      console.log(
-        `🔍 Iniciando verificação de ${capturedImages.length} imagens...`,
-      );
-
       const results = await Promise.all(
         capturedImages.map((img) => this.verifyFace(img, funcionarioId)),
       );
 
-      // Calcula a média dos resultados
       const averageResult = results.reduce(
         (acc, curr) => {
           return {
@@ -187,10 +159,9 @@ class FaceRecognitionService {
         },
       );
 
-      console.log("✅ Verificação múltipla concluída:", averageResult);
       return averageResult;
     } catch (error) {
-      console.error("❌ Erro na verificação múltipla:", error);
+      showErrorToast("Erro na verificação múltipla");
       throw error;
     }
   }

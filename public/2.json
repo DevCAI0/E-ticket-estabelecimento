@@ -1,0 +1,16 @@
+{
+  "name": "Restaurante",
+  "short_name": "Restaurante",
+  "description": "App para validação de tickets de alimentação",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/src/assets/icons/logo-e-ticket-restaurante.png",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

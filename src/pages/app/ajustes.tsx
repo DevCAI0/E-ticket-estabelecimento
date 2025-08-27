@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, RefreshCw, Camera, Database } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
 import { showSuccessToast, showErrorToast } from "@/components/ui/sonner";
@@ -18,7 +18,7 @@ export const Ajustes = () => {
       await logout();
       navigate("/auth/login");
     } catch (error) {
-      console.error("Erro ao fazer logout:", error);
+      showErrorToast("Erro ao fazer logout");
     }
   };
 
@@ -43,7 +43,6 @@ export const Ajustes = () => {
       }
     } catch (error) {
       showErrorToast("Erro ao atualizar aplicativo");
-      console.error(error);
     } finally {
       setIsUpdating(false);
     }
@@ -53,13 +52,11 @@ export const Ajustes = () => {
     try {
       setIsClearing(true);
 
-      // Limpar caches
       if ("caches" in window) {
         const cacheKeys = await caches.keys();
         await Promise.all(cacheKeys.map((key) => caches.delete(key)));
       }
 
-      // Limpar localStorage (exceto dados de autenticação)
       const authToken = localStorage.getItem("encryptedToken");
       const authUser = localStorage.getItem("encryptedUser");
       localStorage.clear();
@@ -72,7 +69,6 @@ export const Ajustes = () => {
       }, 1000);
     } catch (error) {
       showErrorToast("Erro ao limpar cache");
-      console.error(error);
     } finally {
       setIsClearing(false);
     }
@@ -97,7 +93,6 @@ export const Ajustes = () => {
             : "Erro ao acessar câmera",
         );
       }
-      console.error("Erro câmera:", error);
     }
   };
 
@@ -108,7 +103,6 @@ export const Ajustes = () => {
           <CardTitle className="text-2xl">Ajustes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Seção do Perfil */}
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
@@ -128,7 +122,6 @@ export const Ajustes = () => {
 
           <Separator />
 
-          {/* Sistema e Atualizações */}
           <div className="space-y-4">
             <h3 className="text-base font-medium">Sistema</h3>
 
@@ -188,7 +181,6 @@ export const Ajustes = () => {
           </div>
 
           <Separator />
-          {/* Botão de Logout */}
           <Button
             onClick={handleLogout}
             variant="ghost"

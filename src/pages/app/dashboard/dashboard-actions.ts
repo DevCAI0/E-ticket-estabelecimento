@@ -3,9 +3,11 @@ import {
   ScanLine,
   Search,
   CheckCircle,
-  FileText,
-  BarChart3,
-  CreditCard,
+  // FileText,
+  // BarChart3,
+  // CreditCard,
+  // Package,
+  // Truck,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -38,26 +40,5 @@ export const dashboardActions: DashboardAction[] = [
     color: "--chart-3",
     path: "/approve-tickets",
     description: "Aprovar tickets pendentes",
-  },
-  {
-    icon: FileText,
-    title: "Notas",
-    color: "--chart-4",
-    path: "/invoices",
-    description: "Gerenciar notas fiscais",
-  },
-  {
-    icon: BarChart3,
-    title: "Relatórios",
-    color: "--chart-5",
-    path: "/reports",
-    description: "Visualizar relatórios",
-  },
-  {
-    icon: CreditCard,
-    title: "Faturamento",
-    color: "--chart-1",
-    path: "/billing",
-    description: "Gestão de faturamento",
   },
 ];

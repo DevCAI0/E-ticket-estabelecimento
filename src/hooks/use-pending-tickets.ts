@@ -1,81 +1,111 @@
 import { useState, useEffect } from "react";
 import { Ticket } from "@/types/ticket";
+import { encryptData, decryptData } from "@/lib/crypto";
+import { showErrorToast } from "@/components/ui/sonner";
 
-interface PendingTicket extends Ticket {
-  addedAt: string;
+interface TicketPendente extends Ticket {
+  adicionadoEm: string;
 }
 
-export function usePendingTickets() {
-  const [pendingTickets, setPendingTickets] = useState<PendingTicket[]>([]);
+const STORAGE_KEY = "ticketsPendentes";
+
+export function useTicketsPendentes() {
+  const [ticketsPendentes, setTicketsPendentes] = useState<TicketPendente[]>(
+    [],
+  );
 
   useEffect(() => {
-    const stored = localStorage.getItem("pendingTickets");
-    if (stored) {
-      const tickets: PendingTicket[] = JSON.parse(stored);
-      const validTickets = tickets.filter((ticket) => {
-        const expirationDate = new Date(ticket.expiracao);
-        return expirationDate > new Date() && ticket.status !== 3;
-      });
-      setPendingTickets(validTickets);
-      if (validTickets.length !== tickets.length) {
-        localStorage.setItem("pendingTickets", JSON.stringify(validTickets));
+    const armazenado = localStorage.getItem(STORAGE_KEY);
+    if (armazenado) {
+      try {
+        const tickets: TicketPendente[] = decryptData(armazenado);
+        if (Array.isArray(tickets)) {
+          const ticketsValidos = tickets.filter((ticket) => {
+            if (!ticket.expiracao) {
+              return false;
+            }
+
+            const dataExpiracao = new Date(ticket.expiracao);
+            return dataExpiracao > new Date() && ticket.status !== 3;
+          });
+
+          setTicketsPendentes(ticketsValidos);
+
+          if (ticketsValidos.length !== tickets.length) {
+            const dadosCriptografados = encryptData(ticketsValidos);
+            localStorage.setItem(STORAGE_KEY, dadosCriptografados);
+          }
+        }
+      } catch (_error) {
+        showErrorToast("Erro ao carregar tickets pendentes");
+        localStorage.removeItem(STORAGE_KEY);
+        setTicketsPendentes([]);
       }
     }
   }, []);
 
-  const addTicket = (ticket: Ticket) => {
+  const salvarTickets = (tickets: TicketPendente[]) => {
+    try {
+      const dadosCriptografados = encryptData(tickets);
+      localStorage.setItem(STORAGE_KEY, dadosCriptografados);
+    } catch (_error) {
+      showErrorToast("Erro ao salvar tickets");
+    }
+  };
+
+  const adicionarTicket = (ticket: Ticket) => {
     if (ticket.status === 3) return;
 
-    setPendingTickets((current) => {
-      if (current.some((t) => t.id === ticket.id)) {
-        return current;
+    setTicketsPendentes((atual) => {
+      if (atual.some((t) => t.id === ticket.id)) {
+        return atual;
       }
 
-      const newTicket: PendingTicket = {
+      const novoTicket: TicketPendente = {
         ...ticket,
-        addedAt: new Date().toISOString(),
+        adicionadoEm: new Date().toISOString(),
       };
 
-      const newTickets = [...current, newTicket];
-      localStorage.setItem("pendingTickets", JSON.stringify(newTickets));
-      return newTickets;
+      const novosTickets = [...atual, novoTicket];
+      salvarTickets(novosTickets);
+      return novosTickets;
     });
   };
 
-  const updateTicketStatus = (ticketId: number, newStatus: number) => {
-    setPendingTickets((current) => {
-      if (newStatus === 3) {
-        const newTickets = current.filter((t) => t.id !== ticketId);
-        localStorage.setItem("pendingTickets", JSON.stringify(newTickets));
-        return newTickets;
+  const atualizarStatusTicket = (ticketId: number, novoStatus: number) => {
+    setTicketsPendentes((atual) => {
+      if (novoStatus === 3) {
+        const novosTickets = atual.filter((t) => t.id !== ticketId);
+        salvarTickets(novosTickets);
+        return novosTickets;
       }
 
-      const newTickets = current.map((ticket) =>
-        ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket,
+      const novosTickets = atual.map((ticket) =>
+        ticket.id === ticketId ? { ...ticket, status: novoStatus } : ticket,
       );
-      localStorage.setItem("pendingTickets", JSON.stringify(newTickets));
-      return newTickets;
+      salvarTickets(novosTickets);
+      return novosTickets;
     });
   };
 
-  const removeTicket = (ticketId: number) => {
-    setPendingTickets((current) => {
-      const newTickets = current.filter((t) => t.id !== ticketId);
-      localStorage.setItem("pendingTickets", JSON.stringify(newTickets));
-      return newTickets;
+  const removerTicket = (ticketId: number) => {
+    setTicketsPendentes((atual) => {
+      const novosTickets = atual.filter((t) => t.id !== ticketId);
+      salvarTickets(novosTickets);
+      return novosTickets;
     });
   };
 
-  const clearTickets = () => {
-    localStorage.removeItem("pendingTickets");
-    setPendingTickets([]);
+  const limparTickets = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setTicketsPendentes([]);
   };
 
   return {
-    pendingTickets,
-    addTicket,
-    updateTicketStatus,
-    removeTicket,
-    clearTickets,
+    ticketsPendentes,
+    adicionarTicket,
+    atualizarStatusTicket,
+    removerTicket,
+    limparTickets,
   };
 }

@@ -29,6 +29,19 @@ export function TicketCard({
   usuario_leitura,
   index,
 }: TicketCardProps) {
+  // Define as cores baseadas no status
+  const getStatusStyle = (status: string) => {
+    if (status.toLowerCase() === "consumido") {
+      return "bg-green-100 text-green-800";
+    } else if (status.toLowerCase() === "expirado") {
+      return "bg-red-100 text-red-800";
+    } else if (status.toLowerCase() === "pendente") {
+      return "bg-yellow-100 text-yellow-800";
+    } else {
+      return "bg-secondary text-secondary-foreground";
+    }
+  };
+
   return (
     <motion.div
       initial={{ x: -100, opacity: 0 }}
@@ -42,7 +55,9 @@ export function TicketCard({
             <span className="text-sm font-medium text-primary">
               Ticket #{numero}
             </span>
-            <span className="rounded bg-secondary px-2 py-1 text-sm text-secondary-foreground">
+            <span
+              className={`rounded px-2 py-1 text-sm font-medium ${getStatusStyle(status_texto)}`}
+            >
               {status_texto}
             </span>
           </div>

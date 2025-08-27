@@ -2,13 +2,12 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { X, Image, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { showErrorToast, showSuccessToast } from "@/components/ui/sonner";
 
 interface QrScannerProps {
   onScan: (qrCode: string) => void;
 }
+
 const qrConfig = {
   fps: 10,
   qrbox: { width: 250, height: 250 },
@@ -17,12 +16,12 @@ const qrConfig = {
   videoConstraints: {
     width: { min: 640, ideal: 1080, max: 1920 },
     height: { min: 480, ideal: 1080, max: 1080 },
+    facingMode: { exact: "environment" },
   },
 };
 
 const QrScanner = ({ onScan }: QrScannerProps) => {
   const [isScanning, setIsScanning] = useState<boolean>(false);
-  const [isFrontCamera, setIsFrontCamera] = useState<boolean>(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
@@ -81,45 +80,33 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
     }
 
     try {
-      const config = {
-        ...qrConfig,
-        videoConstraints: {
-          ...qrConfig.videoConstraints,
-          facingMode: isFrontCamera ? "user" : { exact: "environment" },
-        },
-      };
-
       await scannerRef.current.start(
-        { facingMode: isFrontCamera ? "user" : { exact: "environment" } },
-        config,
+        { facingMode: { exact: "environment" } },
+        qrConfig,
         handleScanSuccess,
         () => {},
       );
       setIsScanning(true);
     } catch (err) {
-      console.error("Erro ao iniciar scanner:", err);
-      if (!isFrontCamera) {
-        try {
-          const fallbackConfig = {
-            ...qrConfig,
-            videoConstraints: {
-              ...qrConfig.videoConstraints,
-              facingMode: "environment",
-            },
-          };
-          await scannerRef.current?.start(
-            { facingMode: "environment" },
-            fallbackConfig,
-            handleScanSuccess,
-            () => {},
-          );
-          setIsScanning(true);
-          return;
-        } catch (fallbackErr) {
-          console.error("Erro ao tentar fallback:", fallbackErr);
-        }
+      try {
+        const fallbackConfig = {
+          ...qrConfig,
+          videoConstraints: {
+            ...qrConfig.videoConstraints,
+            facingMode: "environment",
+          },
+        };
+
+        await scannerRef.current?.start(
+          { facingMode: "environment" },
+          fallbackConfig,
+          handleScanSuccess,
+          () => {},
+        );
+        setIsScanning(true);
+      } catch (fallbackErr) {
+        showErrorToast("Erro ao acessar a câmera. Verifique as permissões.");
       }
-      showErrorToast("Erro ao acessar a câmera. Verifique as permissões.");
     }
   };
 
@@ -133,22 +120,7 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
       }
       setIsScanning(false);
     } catch (err) {
-      console.error("Erro ao parar scanner:", err);
-    }
-  };
-
-  const handleCameraSwitch = async (checked: boolean) => {
-    if (isScanning) {
-      showErrorToast("Pare o scanner antes de trocar a câmera");
-      return;
-    }
-
-    try {
-      await stopScanning();
-      setIsFrontCamera(checked);
-    } catch (err) {
-      console.error("Erro ao trocar câmera:", err);
-      showErrorToast("Erro ao trocar de câmera. Tente novamente.");
+      showErrorToast("Erro ao parar scanner");
     }
   };
 
@@ -190,7 +162,6 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
         await startScanning();
       }
     } catch (err) {
-      console.error("Erro ao alternar scanner:", err);
       showErrorToast("Erro ao alternar o scanner. Tente novamente.");
     }
   };
@@ -208,15 +179,7 @@ const QrScanner = ({ onScan }: QrScannerProps) => {
         </Button>
 
         <div className="flex items-center gap-2">
-          <Label htmlFor="camera-switch" className="text-sm text-white">
-            {isFrontCamera ? "Câmera Frontal" : "Câmera Traseira"}
-          </Label>
-          <Switch
-            id="camera-switch"
-            checked={isFrontCamera}
-            onCheckedChange={handleCameraSwitch}
-            disabled={isScanning}
-          />
+          <p className="text-sm text-white">Câmera Traseira</p>
         </div>
       </div>
 

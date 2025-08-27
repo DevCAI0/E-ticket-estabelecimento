@@ -1,22 +1,22 @@
 // src/components/tickets/tickets-pendentes.tsx
 import { useState } from "react";
-import { useTicketService } from "@/services/ticket-service";
 import { Ticket } from "@/types/ticket";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
-import { usePendingTickets } from "@/hooks/use-pending-tickets";
-import { VerificationResult } from "@/types/face-recognition";
-import FacialRecognitionDialog from "../facial-recognition/FacialRecognitionDialog";
+import { ResultadoVerificacao } from "@/types/reconhecimento-facial";
+import DialogoReconhecimentoFacial from "../facial-recognition/DialogoReconhecimentoFacial";
+import { useTicketService } from "@/services/ticket-service";
+import { useTicketsPendentes } from "@/hooks/use-pending-tickets";
 
-interface TicketCardProps {
+interface CardTicketProps {
   ticket: Ticket;
-  onRemove: (id: number) => void;
-  onApprove: (ticket: Ticket) => void;
+  aoRemover: (id: number) => void;
+  aoAprovar: (ticket: Ticket) => void;
 }
 
-function TicketCard({ ticket, onRemove, onApprove }: TicketCardProps) {
+function CardTicket({ ticket, aoRemover, aoAprovar }: CardTicketProps) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4">
@@ -40,7 +40,7 @@ function TicketCard({ ticket, onRemove, onApprove }: TicketCardProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onRemove(ticket.id)}
+              onClick={() => aoRemover(ticket.id)}
               className="h-9 w-9 sm:w-auto sm:px-3"
             >
               <Trash2 className="h-4 w-4" />
@@ -49,7 +49,7 @@ function TicketCard({ ticket, onRemove, onApprove }: TicketCardProps) {
             <Button
               variant="default"
               size="sm"
-              onClick={() => onApprove(ticket)}
+              onClick={() => aoAprovar(ticket)}
               className="h-9 px-3"
             >
               Aprovar
@@ -62,26 +62,24 @@ function TicketCard({ ticket, onRemove, onApprove }: TicketCardProps) {
 }
 
 export function TicketsPendentes() {
-  const { pendingTickets, removeTicket } = usePendingTickets();
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [showRecognition, setShowRecognition] = useState(false);
-  const ticketService = useTicketService();
+  const { ticketsPendentes, removerTicket } = useTicketsPendentes();
+  const [ticketSelecionado, setTicketSelecionado] = useState<Ticket | null>(
+    null,
+  );
+  const [mostrarReconhecimento, setMostrarReconhecimento] = useState(false);
+  const servicoTicket = useTicketService();
 
-  const handleVerificationSuccess = async (result: VerificationResult) => {
+  const handleSucessoVerificacao = async (resultado: ResultadoVerificacao) => {
     try {
-      if (
-        selectedTicket &&
-        result.isMatch &&
-        result.similarity >= result.confidence
-      ) {
-        await ticketService.aprovarTicket(selectedTicket.id, true);
+      if (ticketSelecionado && resultado.similaridade >= resultado.confianca) {
+        await servicoTicket.aprovarTicket(ticketSelecionado.id, true);
         // Remover o ticket da lista de pendentes
-        removeTicket(selectedTicket.id);
+        removerTicket(ticketSelecionado.id);
         toast.success("Ticket Aprovado", {
           description: "Reconhecimento facial confirmado com sucesso",
         });
-        setShowRecognition(false);
-        setSelectedTicket(null);
+        setMostrarReconhecimento(false);
+        setTicketSelecionado(null);
       } else {
         toast.error("Verificação Falhou", {
           description: "Não foi possível confirmar a identidade",
@@ -94,41 +92,46 @@ export function TicketsPendentes() {
     }
   };
 
-  const handleApprove = (ticket: Ticket) => {
-    setSelectedTicket(ticket);
-    setShowRecognition(true);
+  const handleFecharReconhecimento = () => {
+    setMostrarReconhecimento(false);
+    setTicketSelecionado(null);
+  };
+
+  const handleAprovar = (ticket: Ticket) => {
+    setTicketSelecionado(ticket);
+    setMostrarReconhecimento(true);
   };
 
   return (
     <div className="w-full">
       <div className="space-y-3">
-        {pendingTickets.length === 0 ? (
+        {ticketsPendentes.length === 0 ? (
           <div className="flex min-h-[200px] items-center justify-center rounded-lg border border-dashed">
             <p className="text-sm text-muted-foreground">
               Nenhum ticket pendente de aprovação
             </p>
           </div>
         ) : (
-          pendingTickets.map((ticket) => (
-            <TicketCard
+          ticketsPendentes.map((ticket) => (
+            <CardTicket
               key={ticket.id}
               ticket={ticket}
-              onRemove={removeTicket}
-              onApprove={handleApprove}
+              aoRemover={removerTicket}
+              aoAprovar={handleAprovar}
             />
           ))
         )}
       </div>
 
-      {selectedTicket && (
-        <FacialRecognitionDialog
-          open={showRecognition}
-          onSuccess={handleVerificationSuccess}
-          onClose={() => {
-            setShowRecognition(false);
-            setSelectedTicket(null);
-          }}
-          funcionarioId={selectedTicket.funcionario.id_funcionario}
+      {ticketSelecionado && (
+        <DialogoReconhecimentoFacial
+          open={mostrarReconhecimento}
+          onSuccess={handleSucessoVerificacao}
+          onClose={handleFecharReconhecimento}
+          userId={
+            ticketSelecionado.funcionario.id_funcionario?.toString() || ""
+          }
+          userName={ticketSelecionado.funcionario.nome}
         />
       )}
     </div>

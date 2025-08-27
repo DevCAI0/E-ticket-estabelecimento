@@ -1,4 +1,7 @@
-// src/pages/auth/sign-in.tsx
+"use client";
+
+import type React from "react";
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -10,52 +13,27 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from "@/components/ui/card";
-import { AlertCircle, Coffee, ArrowRight, Eye, EyeOff } from "lucide-react";
+import {
+  AlertCircle,
+  Coffee,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  ChefHat,
+  Utensils,
+} from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useAuth } from "@/hooks/useAuth";
-import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { cn } from "@/lib/utils";
-import type { AuthCredentials } from "@/types/auth";
-import { useToast } from "@/hooks/use-toast";
+import type { AuthCredentials } from "@/types/user";
+import { showErrorToast } from "@/components/ui/sonner";
 
 interface FormError {
   identifier?: string;
   senha?: string;
 }
-
-const animations = {
-  container: {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut",
-      },
-    },
-  },
-  form: {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  },
-  input: {
-    hidden: { opacity: 0, x: -20 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: {
-        duration: 0.3,
-      },
-    },
-  },
-};
 
 export default function SignIn() {
   const [formData, setFormData] = useState<AuthCredentials>({
@@ -68,7 +46,6 @@ export default function SignIn() {
 
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const validators = {
     identifier: (value: string): string => {
@@ -115,32 +92,19 @@ export default function SignIn() {
     try {
       const result = await signIn(formData);
 
-      if (result.success) {
-        toast({
-          title: "Login realizado com sucesso!",
-          description: `Bem-vindo, ${result.user?.nome}!`,
-          duration: 3000,
-        });
-        navigate("/", { replace: true });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Erro ao fazer login",
-          description: result.message || "Login ou senha inválidos.",
-          duration: 5000,
-        });
+      if (result.success && result.user) {
+        if (result.user.id_perfil === 1) {
+          navigate("/", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
       }
     } catch (error) {
-      console.error("Erro ao fazer login:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao fazer login",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Erro ao tentar fazer login.",
-        duration: 5000,
-      });
+      showErrorToast(
+        error instanceof Error
+          ? error.message
+          : "Erro inesperado ao tentar fazer login.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +116,7 @@ export default function SignIn() {
     type: string,
     placeholder: string,
   ) => (
-    <motion.div variants={animations.input} className="space-y-2">
+    <div className="space-y-2">
       <Label htmlFor={name} className="text-sm font-medium">
         {label}
       </Label>
@@ -168,7 +132,7 @@ export default function SignIn() {
           className={cn(
             "h-12 text-base placeholder:text-muted-foreground/50",
             "transition-all duration-300",
-            "border-2 focus:border-primary/20 focus:ring-2 focus:ring-primary/20",
+            "border-2 focus:border-[#f97316]/30 focus:ring-2 focus:ring-[#f97316]/20",
             errors[name] &&
               "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20",
           )}
@@ -189,74 +153,65 @@ export default function SignIn() {
           </Button>
         )}
       </div>
-      <AnimatePresence>
-        {errors[name] && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <Alert variant="destructive" className="text-sm">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{errors[name]}</AlertDescription>
-            </Alert>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      {errors[name] && (
+        <Alert variant="destructive" className="text-sm">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{errors[name]}</AlertDescription>
+        </Alert>
+      )}
+    </div>
   );
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background p-4">
-      <div className="pattern-dots pattern-blue-500 pattern-bg-white pattern-size-6 pattern-opacity-10 absolute inset-0 h-full w-full" />
+    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#fff7ed] via-background to-[#fff7ed] p-4 dark:from-[#27150a]/20 dark:via-background dark:to-[#27150a]/20">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -left-10 -top-10 h-64 w-64 rounded-full bg-[#fed7aa]/20 blur-3xl dark:bg-[#f97316]/10" />
+        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-[#fdba74]/10 blur-3xl dark:bg-[#ea580c]/10" />
+        <div className="absolute left-1/3 top-1/4 h-48 w-48 rounded-full bg-[#ffedd5]/30 blur-2xl dark:bg-[#c2410c]/10" />
 
-      <motion.div
-        variants={animations.container}
-        initial="hidden"
-        animate="visible"
-        className="relative z-10 w-full max-w-sm"
-      >
-        <Card className="border-2 bg-background/95 shadow-2xl backdrop-blur">
-          <CardHeader className="space-y-2 pb-8">
-            <div className="mb-8 flex justify-center">
-              <motion.div
-                className="flex items-center gap-2 rounded-full bg-primary/10 px-6 py-3"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Coffee className="h-6 w-6 text-primary" />
-                <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-2xl font-bold text-transparent">
-                  E-ticket
-                </span>
-              </motion.div>
+        <div className="absolute left-[15%] top-[20%] animate-bounce opacity-20">
+          <Coffee className="h-12 w-12 text-[#ea580c] dark:text-[#f97316]" />
+        </div>
+        <div className="absolute right-[20%] top-[30%] animate-pulse opacity-20">
+          <ChefHat className="h-10 w-10 text-[#f97316] dark:text-[#fb923c]" />
+        </div>
+        <div className="absolute bottom-[25%] left-[25%] animate-ping opacity-20">
+          <Utensils className="h-8 w-8 text-[#fb923c] dark:text-[#fdba74]" />
+        </div>
+      </div>
+
+      <div className="relative z-10 w-full max-w-md">
+        <Card className="overflow-hidden border-0 bg-card/80 shadow-xl backdrop-blur-sm">
+          <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gradient-to-br from-[#fb923c] to-[#ea580c] opacity-10 blur-2xl dark:opacity-20" />
+
+          <CardHeader className="space-y-2 pb-6">
+            <div className="mb-6 flex justify-center">
+              <div className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#f97316] to-[#ea580c] px-6 py-3 text-white shadow-lg transition-transform hover:scale-105 dark:from-[#f97316] dark:to-[#c2410c]">
+                <Coffee className="h-6 w-6" />
+                <span className="text-2xl font-bold">E-ticket</span>
+              </div>
             </div>
             <CardTitle className="text-center text-2xl font-bold sm:text-3xl">
-              Bem-vindo
+              Bem-vindo ao Sistema
             </CardTitle>
             <CardDescription className="text-center text-base">
-              Faça login para continuar
+              Faça login para acessar sua conta
             </CardDescription>
           </CardHeader>
 
           <CardContent>
-            <motion.form
-              variants={animations.form}
-              initial="hidden"
-              animate="visible"
-              onSubmit={handleSubmit}
-              className="space-y-6"
-            >
+            <form onSubmit={handleSubmit} className="space-y-6">
               {renderInput("identifier", "Login", "text", "Digite seu login")}
               {renderInput("senha", "Senha", "password", "Digite sua senha")}
 
-              <motion.div variants={animations.input}>
+              <div>
                 <Button
                   type="submit"
                   disabled={isLoading || Object.values(errors).some(Boolean)}
                   className={cn(
-                    "h-12 w-full text-base font-medium",
+                    "h-12 w-full bg-gradient-to-r from-[#f97316] to-[#ea580c] text-base font-medium text-white dark:from-[#f97316] dark:to-[#c2410c]",
                     "transition-all duration-300",
-                    "hover:scale-[1.02] active:scale-[0.98]",
+                    "hover:scale-[1.02] hover:shadow-lg hover:shadow-[#f97316]/20 active:scale-[0.98]",
                     "disabled:cursor-not-allowed disabled:opacity-50",
                   )}
                 >
@@ -272,11 +227,17 @@ export default function SignIn() {
                     </div>
                   )}
                 </Button>
-              </motion.div>
-            </motion.form>
+              </div>
+            </form>
           </CardContent>
+
+          <CardFooter className="flex justify-center pb-8 pt-2">
+            <p className="text-center text-sm text-muted-foreground">
+              Sistema de gerenciamento de tickets para estabelecimentos
+            </p>
+          </CardFooter>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 }
